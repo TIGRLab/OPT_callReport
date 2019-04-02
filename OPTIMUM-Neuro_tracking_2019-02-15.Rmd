@@ -19,20 +19,19 @@ always_allow_html: yes
     library(lubridate)
     library(textclean)
 
-    setwd('/scratch/gherman/OPT_callReport')
+    #setwd('/projects/gherman/OPT_callReport')
 
 ```
 
 ```{r data cleaning, include = FALSE, warning = FALSE}
 
 #read in data
-  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-02-14_1042.csv', na.strings=c("","NA")) #contains all but MRI
-  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-02-14_1041.csv', na.strings=c("","NA")) #contains just MRI
-  targets <- read.csv('data/OPT_recruitTargets.csv')
-
+  df <- read.csv('/projects/gherman/OPT_callreport/data/OPTIMUMMainDatabaseF_DATA_2019-04-02_1414.csv', na.strings=c("","NA")) #contains all but MRI
+  mri <- read.csv('/projects/gherman/OPT_callreport/data/OPTIMUMMainDatabaseF_DATA_2019-04-02_1145.csv', na.strings=c("","NA")) #contains just MRI
+  targets <- read.csv('info/OPT_recruitTargets.csv')
 #for the purposes of this report - only consider the first session of the baseline scan - might need to modify later if want to count followup
   mri <- subset(mri, mri$redcap_repeat_instrument =="optimum_neuro_mri")
-  mri <- subset(mri, mri$redcap_event_name =="baseline_arm_6")
+  mri <- subset(mri, mri$redcap_event_name =="baseline_arm_6"|mri$redcap_event_name =="6_mth_fu_arm_6")
 
 #merge mri and df dataframes
   df <- merge(df, mri, by=c('record_id', 'redcap_event_name'), all.x=TRUE)
@@ -124,6 +123,7 @@ recruit_df <- df[, c(
  recruit_df$terminated <- ifelse(recruit_df$meta_terminate_reason == 3, 0, 1)
 
 #add columns that indicate timepoint at which terminated (for reasons other than completion)
+ #GABI note to self: I don't think this would work...
  recruit_df$terminate_baseline <- ifelse(recruit_df$meta_terminate_reason != 3 & recruit_df$timepoint == 'baseline', 1, NA)
  recruit_df$terminate_FU_06_MTH <- ifelse(recruit_df$meta_terminate_reason != 3 & recruit_df$timepoint == '6 mth FU', 1, NA)
  recruit_df$terminate_FU_24_MTH <- ifelse(recruit_df$meta_terminate_reason != 3 & recruit_df$timepoint == '24 mth FU', 1, NA)
@@ -135,8 +135,15 @@ recruit_df <- df[, c(
 #add column that indicates if enrolled (where enrollment is 2 of 3 mri, blood, neuropsych)
   enroll_df <- recruit_df #make a new dataframe (did this because want new DF to consider only baseline)
 
+ 
+ 
+#NOTE TO SELF FOR GABI: It seems like this is where enroll df starts only counting baseline. I think that I could just filter out 6 month follow up from baseline and calculate that way???  
+ 
+ 
+ 
+#NOTE TO SELF FOR GABI: I JUST COMMENTED THIS OUT 
 #take only baseline
-  enroll_df <- enroll_df[(enroll_df$timepoint == 'baseline'),] 
+ enroll_df <- enroll_df[(enroll_df$timepoint == 'baseline'),] 
  
 #first, check if T1 complete, and if date is this month
   #note - here, 'complete' means just T1 complete
@@ -220,6 +227,97 @@ recruit_df <- df[, c(
 recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all.x = TRUE)
   
 ```
+
+
+#gabi attempt IS HERE
+```{r attempt_to_track_6mth_fu , echo = FALSE, include = FALSE, warning = FALSE}
+
+fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU")
+
+#first, check if T1 complete, and if date is this month
+  #note - here, 'complete' means just T1 complete
+  names(fu_df)[names(fu_df) == "mr_t1"] <- "enroll_mri" #change name of status column
+  names(fu_df)[names(fu_df) == "mr_date"] <- "enroll_mri_date" #change name of date column
+  
+  fu_df$enroll_mri <- ifelse(fu_df$enroll_mri == 1, 1, NA) #turn no to NA
+  fu_df$enroll_mri_date <- as.Date(fu_df$enroll_mri_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
+  fu_df$enroll_mri_mth <- as.character(substr(fu_df$enroll_mri_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_mri_mthT <- fu_df$enroll_mri_mth %in% fu_df$currentYm_str #logical T or F- was MRI this month?
+
+#second, check if blood complete, and if date is this month
+  #note - here, 'complete' means that just the plasma is complete (don't care about serum)
+  fu_df$enroll_bld <- ifelse(fu_df$plasma_blood_status.x == 1, 1, NA) #turn no and partial to NA
+  fu_df$enroll_bld_date <- substr(fu_df$plasma_blood_date.x, 1, 11)#cut out the time contained in datetime
+  fu_df$enroll_bld_date <- as.Date(fu_df$enroll_bld_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert to datetime 
+  fu_df$enroll_bld_mth <- as.character(substr(fu_df$enroll_bld_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_bld_mthT <- fu_df$enroll_bld_mth %in% fu_df$currentYm_str #logical T or F - was blood this month?    
+  
+#third, check if neuropsych complete, and if data is this month
+  #note - here, 'complete' means rbans and dkefs done in entirity
+  #make new columns with completion and date data for 2 assessments we care about - dkefs and rbans
+  fu_df$dkefs <- ifelse(fu_df$dkefs_complete.x == 1, 1, NA) #turn no and partial to NA
+  fu_df$enroll_dkefs_date <- as.Date(fu_df$dkefs_date_admin.x, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
+  fu_df$enroll_dkefs_mth <- as.character(substr(fu_df$enroll_dkefs_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_dkefs_mthT <- fu_df$enroll_dkefs_mth %in% fu_df$currentYm_str #logical T or F- was dkefs this month?
+
+  fu_df$rbans <- ifelse(fu_df$rbans_complete.x == 1, 1, NA) #turn no and partial to NA
+  fu_df$enroll_rbans_date <- as.Date(fu_df$rbans_date_admin.x, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
+  fu_df$enroll_rbans_mth <- as.character(substr(fu_df$enroll_rbans_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_rbans_mthT <- fu_df$enroll_rbans_mth %in% fu_df$currentYm_str #logical T or F- was rbans this month?
+  
+  #take the sum of columns - want both of the central neuropsych assessments (dkefs, rbans) to be complete
+  fu_df[, c('dkefs', 'rbans')] <- sapply(fu_df[, c('dkefs', 'rbans')], as.numeric) #change to numeric
+  fu_df$np_count <- rowSums(fu_df[,c('dkefs', 'rbans')]) #sum
+
+  #make an enrolled column for neuropsych - if sum is 2 
+  fu_df$enroll_np <- ifelse(fu_df$np_count == 2, 1, 0)
+  
+  #identify the second date in ordered dates - i.e., when enrollment for np criteria is met
+  np_dates <- c('dkefs_date.x', 'rbans_date.x')
+  fu_df$enroll_np_date <- NA
+  for (n in 1:nrow(fu_df)){
+    dates <- fu_df[n, np_dates] # pull out NP assessment dates
+    dates <- dates[order(dates)] # order dates
+      if (length(dates[!is.na(dates)]) == 2) { # if there are 2 assesments
+        fu_df$enroll_np_date[n] <- dates[[2]]   # pull out the second assessment date
+      } else {
+        fu_df$enroll_np_date[n] <- NA         # otherwise print 'NA'
+      }
+    }
+
+  #determine if np criteria was met this month
+  fu_df$enroll_np_date <- as.Date(fu_df$enroll_np_date, origin = "1970-01-01") #turn back into date format
+  fu_df$enroll_np_mth <- as.character(substr(fu_df$enroll_np_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_np_mthT <- fu_df$enroll_np_mth %in% fu_df$currentYm_str #logical T or F- was criteria met this month?
+
+  #determine if enrollment criteria is met, i.e., at least 2/3 of mri, blood, and np completed
+  fu_df$enroll <- rowSums(fu_df[,c('enroll_mri', 'enroll_bld', 'enroll_np')], na.rm = T) #calculate sum
+  fu_df$enroll <- ifelse(fu_df$enroll >= 2, 1, 0)
+  
+  #determine date of 2/3 of mri, blood, and psy completed
+  enroll_dates <- c('enroll_mri_date','enroll_bld_date', 'enroll_np_date')
+  fu_df$enroll_date <- NA
+  for (n in 1:nrow(fu_df)){
+    dates <- fu_df[n, enroll_dates] # pull out component dates
+    dates <- dates[order(dates)] # order dates
+      if (length(dates[!is.na(dates)]) >= 2) { # if there are 2 or more components
+        fu_df$enroll_date[n] <- dates[[2]]   # pull out the second component dates
+      } else {
+        fu_df$enroll_date[n] <- NA         # otherwise print 'NA'
+      }
+    }
+  fu_df$enroll_date <- as.Date(fu_df$enroll_date, origin = "1970-01-01") #turn back into date format
+
+#determine if enrollment was met this month
+  fu_df$enroll_mth <- as.character(substr(fu_df$enroll_date, 1, 7)) #store month and year, as character
+  fu_df$enroll_mthT <- fu_df$enroll_mth %in% fu_df$currentYm_str #logical T or F- was criteria met this month?
+
+  
+  
+  #Sooo I'll calculate stuff kind of this way: 
+  sum(fu_df$enroll_mri[fu_df$site.x='UP'], na.rm=TRUE)
+```
+
 
 ```{r recruit_table, include = FALSE, warning = FALSE}
 
