@@ -26,8 +26,8 @@ always_allow_html: yes
 ```{r data cleaning, include = FALSE, warning = FALSE}
 
 #read in data
-  df <- read.csv('/projects/gherman/OPT_callreport/data/OPTIMUMMainDatabaseF_DATA_2019-04-02_1414.csv', na.strings=c("","NA")) #contains all but MRI
-  mri <- read.csv('/projects/gherman/OPT_callreport/data/OPTIMUMMainDatabaseF_DATA_2019-04-02_1145.csv', na.strings=c("","NA")) #contains just MRI
+  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-04-05_1314.csv', na.strings=c("","NA")) #contains all but MRI
+  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-04-05_1313.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('info/OPT_recruitTargets.csv')
 #for the purposes of this report - only consider the first session of the baseline scan - might need to modify later if want to count followup
   mri <- subset(mri, mri$redcap_repeat_instrument =="optimum_neuro_mri")
@@ -229,20 +229,37 @@ recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all
 ```
 
 
-#gabi attempt IS HERE
+
 ```{r attempt_to_track_6mth_fu , echo = FALSE, include = FALSE, warning = FALSE}
 
-fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU")
+
+#gabi attempt IS HERE
+
+
+#note to self.... the enrollmrimth thing doesnt really work as the only indicator, it should really be combined with mr_t1 (which is enroll_mri i guess) to give an accurate picture of numbers. 
+
+
+
+fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date))
+
+fu_df$currentYm <- Sys.Date() #add current sysdate to df
+fu_df$currentYm_str <- as.character(substr(fu_df$currentYm, 1, 7)) #store month and year, as character
+
 
 #first, check if T1 complete, and if date is this month
   #note - here, 'complete' means just T1 complete
   names(fu_df)[names(fu_df) == "mr_t1"] <- "enroll_mri" #change name of status column
   names(fu_df)[names(fu_df) == "mr_date"] <- "enroll_mri_date" #change name of date column
   
+  
+  
   fu_df$enroll_mri <- ifelse(fu_df$enroll_mri == 1, 1, NA) #turn no to NA
   fu_df$enroll_mri_date <- as.Date(fu_df$enroll_mri_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
   fu_df$enroll_mri_mth <- as.character(substr(fu_df$enroll_mri_date, 1, 7)) #store month and year, as character
-  fu_df$enroll_mri_mthT <- fu_df$enroll_mri_mth %in% fu_df$currentYm_str #logical T or F- was MRI this month?
+  fu_df$enroll_mri_mthT <- fu_df$enroll_mri_mth %in% fu_df$currentYm_str #logical T or F- was MRI this month?  #OKAY SO they must also have T1 completed
+  
+  
+  # if they got an MRI this month then: fu_df %>% filter(enroll_mri==1, enroll_mri_mthT==TRUE)
 
 #second, check if blood complete, and if date is this month
   #note - here, 'complete' means that just the plasma is complete (don't care about serum)
@@ -311,11 +328,118 @@ fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU")
 #determine if enrollment was met this month
   fu_df$enroll_mth <- as.character(substr(fu_df$enroll_date, 1, 7)) #store month and year, as character
   fu_df$enroll_mthT <- fu_df$enroll_mth %in% fu_df$currentYm_str #logical T or F- was criteria met this month?
-
-  
   
   #Sooo I'll calculate stuff kind of this way: 
-  sum(fu_df$enroll_mri[fu_df$site.x='UP'], na.rm=TRUE)
+  sum(fu_df$enroll_mri[fu_df$site.x=='UP'], na.rm=TRUE)
+  
+  
+  
+  
+  
+#follow up recruit table (STILL NEED TO CHANGE THE VARIABLE NAMES, BUT REALLY DON'T WANT TO RIGHT THIS MOMENT)
+  
+# create vector of enrollment variables
+enroll_vars <- c(
+  "enroll_np_mthT",
+  "enroll_np",
+  "enroll_bld_mthT",
+  "enroll_bld", 
+  "enroll_mri_mthT",
+  "enroll_mri"
+  ) 
+
+#turn all NAs into 0
+  recruit_df[, enroll_vars] <- apply(recruit_df[, enroll_vars], 2, function(x){replace(x, is.na(x), 0)})
+
+#initialize dataframe and names columns and rows
+enroll_table <- data.frame(matrix(ncol=11, nrow=length(enroll_vars)))
+
+#names of columns and rows on table
+names(enroll_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
+row.names(enroll_table) <- c(
+  "completed neuropsych current month",
+  "completed neuropsych to date", 
+  "completed blood current month",
+  "completed blood to date",
+  "completed MRI current month",
+  "completed MRI to date")
+
+# initialize counters (j = row, k = column)
+j <- 1
+k <- 1
+
+for (var in enroll_vars) {
+    for (site in sites) {
+        enroll_table[j,k] <- sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, var], na.rm = TRUE)
+        k <- k + 2
+    }
+  k <- 1
+  j <- j + 1
+}
+
+# add in totals
+j <- 1
+k <- 1
+for (var in enroll_vars) {
+  enroll_table[j,11] <- sum(recruit_df[recruit_df$enroll == 1, var], na.rm = TRUE)
+  j <- j + 1
+}
+
+#add in percentages - neuropsych current month
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np_mthT'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
+      enroll_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+    }
+
+#add in percentages - neuropsych to date
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
+      enroll_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+    }
+
+#add in percentages - blood current month
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld_mthT'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
+      enroll_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+  }
+
+#add in percentages - blood to date
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
+      enroll_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+  }
+
+#add in percentages - mri current month
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri_mthT'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
+      enroll_table[5,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+  }
+
+#add in percentages - mri to date
+j <- 2
+  for (site in sites) {
+      n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri'])
+      d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
+      enroll_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+      j <- j + 2
+    }
+
+  
 ```
 
 
