@@ -83,7 +83,7 @@ recruit_df <- prepare_recruit_df(recruit_df)
 
  
  
-#merge back dataframes #what's the purpose of merging it here?
+#merge back dataframes 
 recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all.x = TRUE)
   
 ```
@@ -100,8 +100,23 @@ recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all
 
 
 
+fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date))
+
+fu_df <- prep_fu_df(fu_df)
+
+  #Sooo I'll calculate stuff kind of this way: 
+  sum(fu_df$enroll_mri[fu_df$site.x=='UP'], na.rm=TRUE)
+  
 ```
   
+  OK THIS PART CAN BE DELETED IF THIS TEST WORKS?
+```{r enroll table creation , echo = FALSE, include = FALSE, warning = FALSE,eval=FALSE}
+
+#follow up recruit table (STILL NEED TO CHANGE THE VARIABLE NAMES, BUT REALLY DON'T WANT TO RIGHT THIS MOMENT)
+
+
+```
+
 
 ```{r recruit_table, include = FALSE, warning = FALSE}
 
@@ -136,8 +151,6 @@ kable(recruit_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c',
 ###Enrollment breakdown
 
 ```{r enrollment_table, echo = FALSE, warning = FALSE}
-
-  enroll_table <- make_enroll_table(recruit_df, sites, targets)
 
 #add row names to make like demo table
 enroll_table <- cbind(metric = rownames(enroll_table), enroll_table)
@@ -194,153 +207,5 @@ demo_table %>%
 rm(demo_df, demo_table)
 
 ```
-
-
-
-
-```{r}
-
-
-#note to self.... the enrollmrimth thing doesnt really work as the only indicator, it should really be combined with mr_t1 (which is enroll_mri i guess) to give an accurate picture of numbers. 
-
-
-fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date))
-
-fu_df <- prep_fu_df(fu_df)
-
-  #Sooo I'll calculate stuff kind of this way: 
-  sum(fu_df$enroll_mri[fu_df$site.x=='UP'], na.rm=TRUE)
-  
-```
-
-
-I guess I can remove the percentages here, although I may want to do percentage of people who consented 8 or more months ago who are obtaining follow-up!! That'd be cool.
-
-In order to do that, I'll need a df with participant IDs, initial scan date, later scan date, whether it's >= 6 months earlier. 
-
-AFTER HERE IS THE NOT REAL STUFF THAT I SHOULD DELETE OR MOVE AROUND LATER
-```{r}
-
- # create vector of enrollment variables
-  enroll_vars <- c(
-    "enroll_np_mthT",
-    "enroll_np",
-    "enroll_bld_mthT",
-    "enroll_bld", 
-    "enroll_mri_mthT",
-    "enroll_mri"
-    ) 
-  
-  #turn all NAs into 0
-    fu_df[, enroll_vars] <- apply(fu_df[, enroll_vars], 2, function(x){replace(x, is.na(x), 0)})
-  
-  #initialize dataframe and names columns and rows
-  fu_table <- data.frame(matrix(ncol=11, nrow=length(enroll_vars)))
-  
-  #names of columns and rows on table
-  names(fu_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
-  row.names(fu_table) <- c(
-    "completed neuropsych current month",
-    "completed neuropsych to date", 
-    "completed blood current month",
-    "completed blood to date",
-    "completed MRI current month",
-    "completed MRI to date")
-  
-  # initialize counters (j = row, k = column)
-  j <- 1
-  k <- 1
-  
-  for (var in enroll_vars) {
-      for (site in sites) {
-          fu_table[j,k] <- sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, var], na.rm = TRUE)
-          k <- k + 2
-      }
-    k <- 1
-    j <- j + 1
-  }
-  
-  # add in totals
-  j <- 1
-  k <- 1
-  for (var in enroll_vars) {
-    fu_table[j,11] <- sum(fu_df[fu_df$enroll == 1, var], na.rm = TRUE)
-    j <- j + 1
-  }
-  
-  #add in percentages - neuropsych current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
-  
-  #add in percentages - neuropsych to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
-  
-  #add in percentages - blood current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - blood to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - mri current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[5,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - mri to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
-  
-```
-
-
-
-
-```{r}
-df1 <- fu_df %>% select(record_id, fu_mri = enroll_mri, fu_mri_date = enroll_mri_date)
-
-
-df2 <- enroll_df %>% select(record_id, enroll_mri, enroll_mri_date)
-
-testmerged <- merge(df2 ,df1,by=c('record_id'), all=TRUE) %>%
-  mutate(., fu_due = ifelse(enroll_mri_date %m+% months(6) < Sys.Date(), 1, 0))
-
-```
-
-
-TODO: change the MRI coding (because we have options 1 2 and 3 now in the neuro mri form), and also make it not rely on mri date
-
-
 
 
