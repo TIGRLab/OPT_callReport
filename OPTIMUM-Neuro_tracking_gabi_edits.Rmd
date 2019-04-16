@@ -10,7 +10,7 @@ always_allow_html: yes
     library(plyr)
     library(ggplot2)
     library(reshape2)
-    library(tidyverse)
+    library(tidyverse) 
     library(knitr)
     library(kableExtra)
     library(plotly)
@@ -221,106 +221,7 @@ In order to do that, I'll need a df with participant IDs, initial scan date, lat
 AFTER HERE IS THE NOT REAL STUFF THAT I SHOULD DELETE OR MOVE AROUND LATER
 ```{r}
 
- # create vector of enrollment variables
-  enroll_vars <- c(
-    "enroll_np_mthT",
-    "enroll_np",
-    "enroll_bld_mthT",
-    "enroll_bld", 
-    "enroll_mri_mthT",
-    "enroll_mri"
-    ) 
-  
-  #turn all NAs into 0
-    fu_df[, enroll_vars] <- apply(fu_df[, enroll_vars], 2, function(x){replace(x, is.na(x), 0)})
-  
-  #initialize dataframe and names columns and rows
-  fu_table <- data.frame(matrix(ncol=11, nrow=length(enroll_vars)))
-  
-  #names of columns and rows on table
-  names(fu_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
-  row.names(fu_table) <- c(
-    "completed neuropsych current month",
-    "completed neuropsych to date", 
-    "completed blood current month",
-    "completed blood to date",
-    "completed MRI current month",
-    "completed MRI to date")
-  
-  # initialize counters (j = row, k = column)
-  j <- 1
-  k <- 1
-  
-  for (var in enroll_vars) {
-      for (site in sites) {
-          fu_table[j,k] <- sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, var], na.rm = TRUE)
-          k <- k + 2
-      }
-    k <- 1
-    j <- j + 1
-  }
-  
-  # add in totals
-  j <- 1
-  k <- 1
-  for (var in enroll_vars) {
-    fu_table[j,11] <- sum(fu_df[fu_df$enroll == 1, var], na.rm = TRUE)
-    j <- j + 1
-  }
-  
-  #add in percentages - neuropsych current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
-  
-  #add in percentages - neuropsych to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
-  
-  #add in percentages - blood current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - blood to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - mri current month
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri_mthT'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
-        fu_table[5,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-    }
-  
-  #add in percentages - mri to date
-  j <- 2
-    for (site in sites) {
-        n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
-        d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
-        fu_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-        j <- j + 2
-      }
+fu_table <- make_fu_table <- function(fu_df, sites,targets)
   
 ```
 
