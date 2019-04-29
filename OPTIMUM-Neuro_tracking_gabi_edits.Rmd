@@ -26,8 +26,8 @@ always_allow_html: yes
 ```{r data cleaning, include = FALSE, warning = FALSE}
 
 #read in data
-  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-04-05_1314.csv', na.strings=c("","NA")) #contains all but MRI
-  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-04-05_1313.csv', na.strings=c("","NA")) #contains just MRI
+  df <- read.csv('/scratch/gherman/OPTIMUMMainDatabaseF_DATA_2019-04-24_1113.csv', na.strings=c("","NA")) #contains all but MRI
+  mri <- read.csv('/scratch/gherman/OPTIMUMMainDatabaseF_DATA_2019-04-24_1114.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
@@ -221,7 +221,7 @@ In order to do that, I'll need a df with participant IDs, initial scan date, lat
 AFTER HERE IS THE NOT REAL STUFF THAT I SHOULD DELETE OR MOVE AROUND LATER
 ```{r}
 
-fu_table <- make_fu_table <- function(fu_df, sites,targets)
+fu_table <- make_fu_table(fu_df, sites,targets)
   
 ```
 
