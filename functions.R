@@ -104,6 +104,7 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$mri_fu_overdue <-  ifelse(enroll_df$enroll_mri_date %m+% months(8) < Sys.Date(), 1, 0)
   
   
+  #note: one thing to consider, do we want to count 6mos from that specific assessment, or anchor everything to their consent date? leaning toward the latter tbh.
   
   #second, check if blood complete, and if date is this month
   #note - here, 'complete' means that just the plasma is complete (don't care about serum)
@@ -113,6 +114,7 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$enroll_bld_mth <- as.character(substr(enroll_df$enroll_bld_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_bld_mthT <- enroll_df$enroll_bld_mth %in% enroll_df$currentYm_str #logical T or F - was blood this month?    
   enroll_df$bld_fu_due <-  ifelse(enroll_df$enroll_bld_date %m+% months(6) < Sys.Date(), 1, 0)
+  
   
   #third, check if neuropsych complete, and if data is this month
   #note - here, 'complete' means rbans and dkefs done in entirity

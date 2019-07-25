@@ -240,10 +240,11 @@ fu_due_list <- testmerged %>% select(record_id,fu_due)
 
 fu_df2 <- fu_df %>% merge(.,fu_due_list, by=c('record_id'))
 
-fu_table <- make_fu_table(fu_df, sites,targets)
+fu_table <- make_fu_table(fu_df2, sites,targets)
 
 
 ```
+
 
 
 TODO: change the MRI coding (because we have options 1 2 and 3 now in the neuro mri form), and also make it not rely on mri date

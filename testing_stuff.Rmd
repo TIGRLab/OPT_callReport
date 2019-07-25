@@ -18,6 +18,7 @@ When you save the notebook, an HTML file containing the code and output will be 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
 
+
 ```{r}
 fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y) %>%
   mutate_at(vars(enroll_mri, mri_fu_due), funs( if_else( is.na(.), 0, .) ) ) %>%
