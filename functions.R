@@ -101,6 +101,9 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$enroll_mri_mth <- as.character(substr(enroll_df$enroll_mri_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_mri_mthT <- enroll_df$enroll_mri_mth %in% enroll_df$currentYm_str #logical T or F- was MRI this month?
   enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < Sys.Date(), 1, 0)
+  enroll_df$mri_fu_overdue <-  ifelse(enroll_df$enroll_mri_date %m+% months(8) < Sys.Date(), 1, 0)
+  
+  
   
   #second, check if blood complete, and if date is this month
   #note - here, 'complete' means that just the plasma is complete (don't care about serum)
