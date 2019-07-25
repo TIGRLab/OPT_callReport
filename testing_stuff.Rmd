@@ -22,6 +22,11 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 ```{r}
 fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos) %>%
   mutate_at(vars(enroll_mri, mri_fu_due,mri_fu_7_mos), funs( if_else( is.na(.), 0, .) ) ) %>%
-  mutate(., missing=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
+  mutate(., due=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
+
+```
+
+```{r}
+n_expected <- sum(fu_df_update$overdue, na.rm=TRUE)
 ```
 
