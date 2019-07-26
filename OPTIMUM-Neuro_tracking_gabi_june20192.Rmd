@@ -101,7 +101,7 @@ fu_due_list <- recruit_df%>% select(record_id,mri_fu_due, np_fu_due, bld_fu_due,
 
 fu_due_list <- fu_due_list[!duplicated(fu_due_list$record_id),]
 
-
+#maybe I actually need to compare this to how many ppl actuvally received their init mri
 fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date)) 
 
 fu_df <- prep_fu_df(fu_df) %>% merge(.,fu_due_list, by=c('record_id'))
