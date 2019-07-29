@@ -97,12 +97,13 @@ prepare_enroll_df <- function(enroll_df) {
   names(enroll_df)[names(enroll_df) == "mr_date"] <- "enroll_mri_date" #change name of date column
   
   enroll_df$enroll_mri <- ifelse(enroll_df$enroll_mri == 1, 1, NA) #turn no to NA
+  enroll_df$enroll_mri_init <- ifelse(enroll_df$enroll_mri == 1, 1, NA) #turn no to NA
   enroll_df$enroll_mri_date <- as.Date(enroll_df$enroll_mri_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
   enroll_df$enroll_mri_mth <- as.character(substr(enroll_df$enroll_mri_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_mri_mthT <- enroll_df$enroll_mri_mth %in% enroll_df$currentYm_str #logical T or F- was MRI this month?
   enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < Sys.Date(), 1, 0)
   enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < Sys.Date(), 1, 0)
-  
+  enroll_df$mri_fu_mth <- as.character(substr(enroll_df$enroll_mri_date %m+% months(6), 1, 7)) 
   
   #note: one thing to consider, do we want to count 6mos from that specific assessment, or anchor everything to their consent date? leaning toward the latter tbh.
   

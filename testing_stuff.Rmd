@@ -8,7 +8,8 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-plot(cars)
+library(kableExtra)
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
@@ -20,7 +21,7 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 
 
 ```{r}
-fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y) %>%
+fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y, site=site.x) %>%
   mutate_at(vars(enroll_mri, mri_fu_due,mri_fu_7_mos), funs(if_else( is.na(.), 0, .) ) ) %>%
   mutate(., due=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
 
@@ -34,9 +35,11 @@ n_complete <- sum(fu_df_update$complete, na.rm=TRUE)
 expected <- sum(recruit_df$enroll_mri, na.rm=TRUE)
 
 due2 <- sum(fu_df_update$mri_fu_due, na.rm=TRUE)
+```
+
+```{r}
 
 
-#retention <- 
 
 
 ```

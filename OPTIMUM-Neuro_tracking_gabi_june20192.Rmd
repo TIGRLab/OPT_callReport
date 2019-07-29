@@ -97,7 +97,7 @@ recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all
 #note to self.... the enrollmrimth thing doesnt really work as the only indicator, it should really be combined with mr_t1 (which is enroll_mri i guess) to give an accurate picture of numbers. 
 
 
-fu_due_list <- recruit_df%>% select(record_id,mri_fu_due, np_fu_due, bld_fu_due, mri_fu_7_mos, np_fu_7_mos,bld_fu_7_mos) %>% filter(!is.na(mri_fu_due) | !is.na( np_fu_due) | !is.na( bld_fu_due)| !is.na(mri_fu_7_mos)| !is.na(np_fu_7_mos) | !is.na(bld_fu_7_mos))
+fu_due_list <- recruit_df%>% select(record_id,mri_fu_due, np_fu_due, bld_fu_due, mri_fu_7_mos, np_fu_7_mos,bld_fu_7_mos, enroll_mri_init,mri_fu_mth) %>% filter(!is.na(mri_fu_due) | !is.na( np_fu_due) | !is.na( bld_fu_due)| !is.na(mri_fu_7_mos)| !is.na(np_fu_7_mos) | !is.na(bld_fu_7_mos))
 
 fu_due_list <- fu_due_list[!duplicated(fu_due_list$record_id),]
 
