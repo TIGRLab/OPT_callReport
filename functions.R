@@ -104,7 +104,7 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < Sys.Date(), 1, 0)
   enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < Sys.Date(), 1, 0)
   enroll_df$mri_fu_mth <- as.character(substr(enroll_df$enroll_mri_date %m+% months(6), 1, 7)) 
-  
+  enroll_df$mri_fu_mthT <- enroll_df$mri_fu_mth %in% enroll_df$currentYm_str
   #note: one thing to consider, do we want to count 6mos from that specific assessment, or anchor everything to their consent date? leaning toward the latter tbh.
   
   #second, check if blood complete, and if date is this month

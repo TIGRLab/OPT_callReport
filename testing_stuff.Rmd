@@ -21,7 +21,7 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 
 
 ```{r}
-fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y, site=site.x) %>%
+fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y, site=site.x,enroll_mri_init = enroll_mri_init.y, mri_fu_mth = mri_fu_mth.y, mri_fu_mthT = mri_fu_mthT.y) %>%
   mutate_at(vars(enroll_mri, mri_fu_due,mri_fu_7_mos), funs(if_else( is.na(.), 0, .) ) ) %>%
   mutate(., due=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
 
@@ -34,11 +34,27 @@ n_complete <- sum(fu_df_update$complete, na.rm=TRUE)
 
 expected <- sum(recruit_df$enroll_mri, na.rm=TRUE)
 
-due2 <- sum(fu_df_update$mri_fu_due, na.rm=TRUE)
+due2 <- sum(filter(fu_df_update,fu_df_update$enroll_mri_init==1)$mri_fu_due,na.rm=TRUE) #this is the proper due number bc it accounts for stuff properly.
 ```
 
-```{r}
 
+
+OKAY REAL COUNTS THIS TIME
+
+```{r}
+completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
+
+filtered_fu_df <- filter(fu_df_update,fu_df_update$enroll_mri_init==1)
+
+expected_current_mo <- sum(filtered_fu_df$mri_fu_mthT) #WAIT THIS SHOULD BE CHANGED TO MONTH #also do i want to share the number of expected that have been completed in other months? very confusing overall. 
+
+
+#do i want due or overdue here?
+retention_denom <- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1))
+retention_numer<- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1))
+
+
+filter(fu_df_update, enroll_mri_init==1) %>% filter(enroll_mri==1)
 
 
 
