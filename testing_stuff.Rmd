@@ -59,6 +59,8 @@ filter(fu_df_update, enroll_mri_init==1) %>% filter(enroll_mri==1)
 expected2 <-sum(filter(fu_df_update,fu_df_update$enroll_mri_init==1)$due,na.rm=TRUE) 
 
 
+#this excludes participants who were already followed up in previous month(/ahead of time) and are due this month (so could be a way to exclude them from expected)
+#expected_df<- fu_df_update %>% filter(., mri_fu_mthT) %>% filter(., enroll_mri ==1 & enroll_mri_mthT==FALSE)
 ```
 
 
@@ -66,15 +68,22 @@ OKAY vars I need
 (Do I care about participants who are overdue? I feel like participants who are missed is fine.)
 
 ```{r}
+
 total_scanned <- sum(fu_df_update$complete, na.rm=TRUE)
 
 completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
-expected_current_mo <-  #could hypothetically be fulfilled w/o actually scanning all expected, i think thats ok though
+expected_current_mo <- sum(fu_df_update$mri_fu_mthT)  #could hypothetically be fulfilled w/o actually scanning all expected, i think thats ok though #do i want it to subtract ppl who havent already done it in the previous month?? that seems complicated
 
+# ^ subtract those where mri_fu_mthT is true AND enroll_mri is true AND enroll_mri_mthT is not true? 
   
-retention_denom <- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1))
-retention_numer<- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1))
 
+retention_denom <- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) #do i also want to get rid of ppl who were scanned early and otherwise would be due?
+retention_numer<- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1)
+
+retention_perc <- (nrow(retention_numer)/nrow(retention_denom))*100
+
+
+fu_df_update %>% group_by(site) %>% filter(enroll_mri_init==1 & mri_fu_due==1) %>% summarize(denom=sum(mri_fu_due), numer=sum(enroll_mri)) %>% mutate(perc=numer/denom*100)
 
 ```
 
