@@ -46,7 +46,7 @@ completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
 
 filtered_fu_df <- filter(fu_df_update,fu_df_update$enroll_mri_init==1)
 
-expected_current_mo <- sum(filtered_fu_df$mri_fu_mthT) #WAIT THIS SHOULD BE CHANGED TO MONTH #also do i want to share the number of expected that have been completed in other months? very confusing overall. 
+expected_current_mo <- sum(filtered_fu_df$mri_fu_mthT) #WAIT THIS SHOULD BE CHANGED TO MONTH #also do i want to share the number of expected that have been completed in other months? very confusing overall. #like expected + overdue or just the number expected to be scanned current month?
 
 
 #do i want due or overdue here?
@@ -56,6 +56,24 @@ retention_numer<- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_f
 
 filter(fu_df_update, enroll_mri_init==1) %>% filter(enroll_mri==1)
 
+expected2 <-sum(filter(fu_df_update,fu_df_update$enroll_mri_init==1)$due,na.rm=TRUE) 
+
+
+```
+
+
+OKAY vars I need
+(Do I care about participants who are overdue? I feel like participants who are missed is fine.)
+
+```{r}
+total_scanned <- sum(fu_df_update$complete, na.rm=TRUE)
+
+completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
+expected_current_mo <-  #could hypothetically be fulfilled w/o actually scanning all expected, i think thats ok though
+
+  
+retention_denom <- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1))
+retention_numer<- nrow(filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1))
 
 
 ```
