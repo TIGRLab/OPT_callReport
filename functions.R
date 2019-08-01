@@ -570,6 +570,30 @@ make_demo_table <- function(df, sites){
 
 
 make_fu_table <- function(fu_df, sites,targets){
+  
+  fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y, site=site.x,enroll_mri_init = enroll_mri_init.y, mri_fu_mth = mri_fu_mth.y, mri_fu_mthT = mri_fu_mthT.y) %>%
+    mutate_at(vars(enroll_mri, mri_fu_due,mri_fu_7_mos), funs(if_else( is.na(.), 0, .) ) ) %>%
+    mutate(., due=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
+  
+  total_scanned <- sum(fu_df_update$complete, na.rm=TRUE)
+  
+  completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
+  expected_current_mo <- sum(fu_df_update$mri_fu_mthT)  #could hypothetically be fulfilled w/o actually scanning all expected, i think thats ok though #do i want it to subtract ppl who havent already done it in the previous month?? that seems complicated
+  
+  # ^ subtract those where mri_fu_mthT is true AND enroll_mri is true AND enroll_mri_mthT is not true? 
+  
+  
+  retention_denom <- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1)
+  #do i also want to get rid of ppl who were scanned early and otherwise would be due?
+  retention_numer<- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1)
+  
+  retention_perc <- (nrow(retention_numer)/nrow(retention_denom))*100
+  
+  
+  fu_retention_stats <- fu_df_update %>% group_by(site) %>% 
+    filter(enroll_mri_init==1 & mri_fu_due==1) %>% 
+    summarize(denom=sum(mri_fu_due), numer=sum(enroll_mri)) %>% mutate(perc=numer/denom*100)
+  
   # create vector of enrollment variables
   enroll_vars <- c(
     "enroll_np_mthT",
@@ -631,7 +655,8 @@ make_fu_table <- function(fu_df, sites,targets){
   for (site in sites) {
     n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
     d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'np_fu_due.y'], na.rm=TRUE)
-    fu_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+    fu_table[2,j] <-pmin(100*round(n/d, 2), 100) #this is temporary to cap it at 100%
+    fu_table[2,j] <- paste0(fu_table[2,j], "%") 
     j <- j + 2
   }
   
@@ -649,7 +674,8 @@ make_fu_table <- function(fu_df, sites,targets){
   for (site in sites) {
     n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
     d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'bld_fu_due.y'], na.rm=TRUE)
-    fu_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+    fu_table[4,j] <-pmin(100*round(n/d, 2), 100) #this is temporary to cap it at 100%
+    fu_table[4,j] <- paste0(fu_table[4,j], "%") 
     j <- j + 2
   }
   
@@ -668,7 +694,7 @@ make_fu_table <- function(fu_df, sites,targets){
   for (site in sites) {
     n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
     d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'mri_fu_due.y'], na.rm=TRUE)
-    fu_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
+    fu_table[6,j] <-  paste0(round(fu_retention_stats[which(fu_retention_stats$site==site),]$perc, 0), "%")
     j <- j + 2
   }
   return(fu_table)
