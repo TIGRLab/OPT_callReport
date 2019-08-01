@@ -1,5 +1,5 @@
 ---
-title: "OPTIMUM-Neuro conference call 2019-07-19"
+title: "OPTIMUM-Neuro conference call 2019-07-31"
 output: html_document
 always_allow_html: yes
 ---
@@ -177,7 +177,7 @@ kable(enroll_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 
 ###6 Month Follow-up 
 
 
-Here, the % column indicates the percentage of participants who have reached the six-month mark of the study who have received their 6 month follow-up assessments.
+Here, the % column indicates retention - this is calculated as the percent of participants who received an evaluation at baseline who have also received their 6 month follow-up evaluation. 
 
 ```{r, echo = FALSE, warning = FALSE}
 
@@ -203,7 +203,7 @@ kable(fu_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')
      "`Blood` counts all participants who submitted one aliquot of plasma for bloodwork follow-up.",
      "`MRI` counts all participants who completed the T1 follow-up."), 
                notation = "number") %>%
-  footnote(general = "Current month captures calendar month. The `%` columns calculate percentage of those due for follow-up who were scanned.")
+  footnote(general = "Current month captures calendar month. The `%` columns describe percent retention - what proportion of participants who received their baseline scan have received their 6 month follow-up in time.")
 ```
 
 ##
