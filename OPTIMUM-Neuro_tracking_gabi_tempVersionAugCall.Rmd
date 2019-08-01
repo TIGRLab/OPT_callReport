@@ -41,7 +41,7 @@ source('functions.R')
   df <- prepare_init_df(df, mri, sites)
   
 ```
->We are currently in month `r targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'month_count']` of the study.  
+>We are currently in month `r targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'month_count']` of the study.  
 
 This report is meant to provide a quick overview of the OPTIMUM-Neuro study, to facilitate discussion on its bi-weekly conference calls. All data summarized here derives from the 'tracking' arm of the WashU REDCap database (arm 6), and thus is only as accurate as the data captured there.
 <br> 
