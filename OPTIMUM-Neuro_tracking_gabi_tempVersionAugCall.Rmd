@@ -28,8 +28,8 @@ always_allow_html: yes
 source('functions.R')
 
 #read in data
-  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-07-18_1516.csv', na.strings=c("","NA")) #contains all but MRI
-  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-07-18_1515.csv', na.strings=c("","NA")) #contains just MRI
+  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-08-01_1204.csv', na.strings=c("","NA")) #contains all but MRI
+  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-08-01_1205.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
