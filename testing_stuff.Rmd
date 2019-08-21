@@ -83,7 +83,7 @@ retention_numer<- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due
 retention_perc <- (nrow(retention_numer)/nrow(retention_denom))*100
 
 
-fu_df_update %>% group_by(site) %>% filter(enroll_mri_init==1 & mri_fu_due==1) %>% summarize(denom=sum(mri_fu_due), numer=sum(enroll_mri)) %>% mutate(perc=numer/denom*100)
+fu_retention_stats <- fu_df_update %>% group_by(site) %>% filter(enroll_mri_init==1 & mri_fu_due==1) %>% summarize(denom=sum(mri_fu_due), numer=sum(enroll_mri)) %>% mutate(perc=numer/denom*100)
 
 ```
 
