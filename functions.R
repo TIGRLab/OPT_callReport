@@ -56,7 +56,7 @@ prepare_recruit_df <- function(recruit_df){
   recruit_df$rbans_date <- as.Date(recruit_df$rbans_date_admin, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to date format
   
   #get current date and add to dataframe
-  recruit_df$currentYm <- "2019-07-31" #add current sysdate to df
+  recruit_df$currentYm <- Sys.Date() #add current sysdate to df
   recruit_df$currentYm_str <- as.character(substr(recruit_df$currentYm, 1, 7)) #store month and year, as character
   
   #add column that indicates if consented, consent date, and if this month
@@ -101,8 +101,8 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$enroll_mri_date <- as.Date(enroll_df$enroll_mri_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
   enroll_df$enroll_mri_mth <- as.character(substr(enroll_df$enroll_mri_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_mri_mthT <- enroll_df$enroll_mri_mth %in% enroll_df$currentYm_str #logical T or F- was MRI this month?
-  enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < "2019-07-31", 1, 0)
+  enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < Sys.Date(), 1, 0) #why was this   enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < "2019-07-31", 1, 0)
+  enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < Sys.Date(), 1, 0)
   enroll_df$mri_fu_mth <- as.character(substr(enroll_df$enroll_mri_date %m+% months(6), 1, 7)) 
   enroll_df$mri_fu_mthT <- enroll_df$mri_fu_mth %in% enroll_df$currentYm_str
   #note: one thing to consider, do we want to count 6mos from that specific assessment, or anchor everything to their consent date? leaning toward the latter tbh.
@@ -114,8 +114,8 @@ prepare_enroll_df <- function(enroll_df) {
   enroll_df$enroll_bld_date <- as.Date(enroll_df$enroll_bld_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert to datetime 
   enroll_df$enroll_bld_mth <- as.character(substr(enroll_df$enroll_bld_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_bld_mthT <- enroll_df$enroll_bld_mth %in% enroll_df$currentYm_str #logical T or F - was blood this month?    
-  enroll_df$bld_fu_due <-  ifelse(enroll_df$enroll_bld_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$bld_fu_7_mos <-  ifelse(enroll_df$enroll_bld_date %m+% months(7) < "2019-07-31", 1, 0) 
+  enroll_df$bld_fu_due <-  ifelse(enroll_df$enroll_bld_date %m+% months(6) < Sys.Date(), 1, 0)
+  enroll_df$bld_fu_7_mos <-  ifelse(enroll_df$enroll_bld_date %m+% months(7) < Sys.Date(), 1, 0) 
   
   #third, check if neuropsych complete, and if data is this month
   #note - here, 'complete' means rbans and dkefs done in entirity
@@ -153,9 +153,9 @@ prepare_enroll_df <- function(enroll_df) {
   #determine if np criteria was met this month
   enroll_df$enroll_np_date <- as.Date(enroll_df$enroll_np_date, origin = "1970-01-01") #turn back into date format
   enroll_df$enroll_np_mth <- as.character(substr(enroll_df$enroll_np_date, 1, 7)) #store month and year, as character
-  enroll_df$enroll_np_mthT <- enroll_df$enroll_np_mth %in% enroll_df$currentYm_str #logical T or F- was criteria met this month?
-  enroll_df$np_fu_due <-  ifelse(enroll_df$enroll_np_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$np_fu_7_mos <-  ifelse(enroll_df$enroll_np_date %m+% months(7) < "2019-07-31", 1, 0)
+  enroll_df$enroll_np_mthT <- enroll_df$enroll_np_mth %in% enroll_df$rentYmrentYm_str #logical T or F- was criteria met this month?
+  enroll_df$np_fu_due <-  ifelse(enroll_df$enroll_np_date %m+% months(6) < Sys.Date(), 1, 0)
+  enroll_df$np_fu_7_mos <-  ifelse(enroll_df$enroll_np_date %m+% months(7) <Sys.Date(), 1, 0)
   
   
   #determine if enrollment criteria is met, i.e., at least 2/3 of mri, blood, and np completed
@@ -186,7 +186,7 @@ prepare_enroll_df <- function(enroll_df) {
 
 prep_fu_df <- function(fu_df){
   
-  fu_df$currentYm <- "2019-07-31" #add current sysdate to df
+  fu_df$currentYm <- Sys.Date() #add current sysdate to df
   fu_df$currentYm_str <- as.character(substr(fu_df$currentYm, 1, 7)) #store month and year, as character
   
   
@@ -329,7 +329,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     enroll_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -338,7 +338,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
     enroll_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -347,7 +347,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     enroll_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -356,7 +356,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
     enroll_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -365,7 +365,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     enroll_table[5,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -374,7 +374,7 @@ make_enroll_table <- function(recruit_df, sites, targets){
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
     enroll_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -448,7 +448,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site, 'meta_consent_mthT.x'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     recruit_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -457,7 +457,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site, 'consented.x'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
     recruit_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -466,7 +466,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site, 'enroll_mthT'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     recruit_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -475,7 +475,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   j <- 2
   for (site in sites) {
     n = sum(recruit_df[recruit_df$site.x == site, 'enroll'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'target']
     recruit_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
     j <- j + 2
   }
@@ -645,7 +645,7 @@ make_fu_table <- function(fu_df, sites,targets){
   j <- 2
   for (site in sites) {
     n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
+    d = targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'per_month']
     fu_table[1,j] <-" " 
     j <- j + 2
   }
