@@ -1,0 +1,245 @@
+---
+title: "OPTIMUM-Neuro conference call 2019-10-31"
+output: html_document
+always_allow_html: yes
+---
+
+```{r setup, include = FALSE, warning = FALSE}
+
+# load graphics libraries
+    library(plyr)
+    library(ggplot2)
+    library(reshape2)
+    library(tidyverse) 
+    library(knitr)
+    library(kableExtra)
+    library(plotly)
+    library(stringr)
+    library(bsselectR)
+    library(lubridate)
+    library(textclean)
+
+
+```
+
+```{r data cleaning, include = FALSE, warning = FALSE}
+
+source('functions.R')
+
+#read in data
+  df <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-10-31_1039.csv', na.strings=c("","NA")) #contains all but MRI
+  mri <- read.csv('/home/gherman/Downloads/OPTIMUMMainDatabaseF_DATA_2019-10-31_1038.csv', na.strings=c("","NA")) #contains just MRI
+  targets <- read.csv('info/OPT_recruitTargets.csv')
+  #make sure target data is in proper format
+  targets$month <- as.character(targets$month)
+  
+    sites <- factor(x = c('CU', 'LA', 'UP', 'UT', 'WU'), levels = c('CU', 'LA', 'UP', 'UT', 'WU'))
+  
+
+  
+  df <- prepare_init_df(df, mri, sites)
+  
+```
+>We are currently in month `r targets[targets$month == as.character(substr(Sys.Date(), 1, 7)), 'month_count']` of the study.  
+
+This report is meant to provide a quick overview of the OPTIMUM-Neuro study, to facilitate discussion on its bi-weekly conference calls. All data summarized here derives from the 'tracking' arm of the WashU REDCap database (arm 6), and thus is only as accurate as the data captured there.
+<br> 
+
+------
+<br> 
+
+
+
+
+```{r recruitment, echo = FALSE, include = FALSE, warning = FALSE}
+
+#make a smaller dataframe
+recruit_df <- df[, c(
+  "record_id", 
+  "site",
+  "timepoint",
+  
+  "meta_consent_date", 
+  "meta_terminate_date",
+  "meta_terminate_reason",
+  
+  "plasma_blood_status", 
+  "plasma_blood_date",
+  
+  "mr_t1",
+  "mr_date",
+  
+  "dkefs_complete",
+  "dkefs_date_admin",
+  "rbans_complete",
+  "rbans_date_admin")] 
+
+recruit_df <- prepare_recruit_df(recruit_df)
+ 
+ 
+```
+ 
+```{r enrolment, echo = FALSE, include = FALSE, warning = FALSE}
+#add column that indicates if enrolled (where enrollment is 2 of 3 mri, blood, neuropsych)
+  enroll_df <- prepare_enroll_df(recruit_df) #make a new dataframe (did this because want new DF to consider only baseline)
+
+ 
+ 
+#merge back dataframes #what's the purpose of merging it here?
+recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all.x = TRUE)
+  
+```
+
+```{r, echo = FALSE, include = FALSE, warning = FALSE}
+
+
+#note to self.... the enrollmrimth thing doesnt really work as the only indicator, it should really be combined with mr_t1 (which is enroll_mri i guess) to give an accurate picture of numbers. 
+
+
+fu_due_list <- recruit_df%>% select(record_id,mri_fu_due, np_fu_due, bld_fu_due, mri_fu_7_mos, np_fu_7_mos,bld_fu_7_mos, enroll_mri_init,mri_fu_mth, mri_fu_mthT ) %>% filter(!is.na(mri_fu_due) | !is.na( np_fu_due) | !is.na( bld_fu_due)| !is.na(mri_fu_7_mos)| !is.na(np_fu_7_mos) | !is.na(bld_fu_7_mos))
+
+fu_due_list <- fu_due_list[!duplicated(fu_due_list$record_id),]
+
+#maybe I actually need to compare this to how many ppl actuvally received their init mri
+fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date)) 
+
+fu_df <- prep_fu_df(fu_df) %>% merge(.,fu_due_list, by=c('record_id'))
+  
+```
+
+
+###Recruitment
+
+
+```{r recruit_table, warning = FALSE, echo = FALSE}
+
+recruit_table <- make_recruit_table(recruit_df, sites, targets)
+
+#turns NAs into dashes
+options(knitr.kable.NA = '--')
+
+#table
+kable(recruit_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')) %>%
+  kable_styling("hover", "condensed", full_width = T) %>%
+  add_header_above(c(" ", "CU" = 2, "LA" = 2, "UP" = 2, "UT" = 2, "WU" = 2, " ")) %>%
+  group_rows('Consent[note]', 1, 2, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Enrollment[note]", 3, 4, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Completion[note]", 5, 6, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Termination[note]", 7, 9, label_row_css = "background-color: #ddd; color: 999;") %>%
+  column_spec(1, width = "20em", background = '#f5f5f5') %>%
+  add_footnote(c("`Consent` counts all participants who signed an OPTIMUM-Neuro consent form.", 
+                 "`Enrollment` counts all participants who completed ≥2/3 of the MRI, bloodwork, and neuropsych at the baseline visit.",
+                 "`Completion` counts all enrolled participants who completed the 24 mth FU visit.", 
+                 "`Termination` counts participants coded as: 'not eligible for randomization', 'withdrew', 'lost to follow-up', 'death', 'investigator discretion', and 'other'. Termination does not capture participants who completed the study, i.e., this category is independent from `Completion`."), 
+               notation = "number") %>%
+  footnote(general = "Current month captures calendar month. The `%` columns calculate percentage of target, with all sites having common targets.")
+
+```
+
+------
+
+##Progress Reports {.tabset}
+Please switch between the tabs for baseline and 6 month follow-up numbers.
+
+<br>
+
+###Enrollment breakdown
+
+```{r enrollment_table, echo = FALSE, warning = FALSE}
+
+  enroll_table <- make_enroll_table(recruit_df, sites, targets)
+
+#add row names to make like demo table
+enroll_table <- cbind(metric = rownames(enroll_table), enroll_table)
+rownames(enroll_table) <- NULL
+
+#turns NAs into dashes
+options(knitr.kable.NA = '--')
+
+#table
+kable(enroll_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')) %>%
+  kable_styling("hover", "condensed", full_width = T) %>%
+  add_header_above(c(" ", "CU" = 2, "LA" = 2, "UP" = 2, "UT" = 2, "WU" = 2, " ")) %>%
+  group_rows('Neuropsych[note]', 1, 2, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Blood[note]", 3, 4, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("MRI[note]", 5, 6, label_row_css = "background-color: #ddd; color: 999;") %>%
+  column_spec(1, width = "20em", background = '#f5f5f5') %>%
+  add_footnote(c(
+     "`Neuropsych` counts all participants who completed both the RBANS and D-KEFS in full.",
+     "`Blood` counts all participants who submitted one aliquot of plasma.",
+     "`MRI` counts all participants who completed the T1."), 
+               notation = "number") %>%
+  footnote(general = "Current month captures calendar month. The `%` columns calculate percentage of target, with all sites having common targets.")
+              
+```
+
+###6 Month Follow-up 
+
+
+Here, the % column indicates retention - this is calculated as the percent of participants who received an evaluation at baseline who have also received their 6 month follow-up evaluation. 
+
+```{r, echo = FALSE, warning = FALSE}
+
+fu_table <- make_fu_table(fu_df, sites,targets)
+
+#add row names to make like demo table
+fu_table <- cbind(metric = rownames(fu_table), fu_table)
+rownames(fu_table) <- NULL
+
+#turns NAs into dashes
+options(knitr.kable.NA = '--')
+
+#table
+kable(fu_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')) %>%
+  kable_styling("hover", "condensed", full_width = T) %>%
+  add_header_above(c(" ", "CU" = 2, "LA" = 2, "UP" = 2, "UT" = 2, "WU" = 2, " ")) %>%
+  group_rows('Neuropsych[note]', 1, 2, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Blood[note]", 3, 4, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("MRI[note]", 5, 6, label_row_css = "background-color: #ddd; color: 999;") %>%
+  column_spec(1, width = "20em", background = '#f5f5f5') %>%
+  add_footnote(c(
+     "`Neuropsych` counts all participants who completed both the follow-up RBANS and D-KEFS in full.",
+     "`Blood` counts all participants who submitted one aliquot of plasma for bloodwork follow-up.",
+     "`MRI` counts all participants who completed the T1 follow-up."), 
+               notation = "number") %>%
+  footnote(general = "Current month captures calendar month. The `%` columns describe percent retention - what proportion of participants who received their baseline scan have received their 6 month follow-up in time.")
+```
+
+##
+
+------
+
+
+###Demographics 
+
+<br>
+
+```{r demographics, echo = FALSE, warning = FALSE}
+
+demo_table <- make_demo_table(df, sites)
+
+```
+
+```{r demographics_table, echo = FALSE, warning = FALSE}
+
+demo_table$p <- as.numeric(demo_table$p)
+
+#table
+demo_table %>%
+  mutate(
+    metric = row.names(demo_table),
+    p = cell_spec(p, "html", color = ifelse(p < 0.05, "red", "black"))
+    ) %>%
+  select(metric, CU, LA, UP, UT, WU, p) %>%
+  kable('html', escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')) %>%
+  kable_styling("hover", full_width = T) %>%
+  column_spec(1, width = "20em", background = '#f5f5f5') %>%
+  footnote(general = "These values represent all participants consented at the OPTIMUM-Neuro baseline visit. It does not take into account the participants who consented but did not meet enrollment criteria, and/or who later terminated. Values in brackets are standard deviation. The _p_ values result from Chi-squared for categorical variables and omnibus ANOVA for continuous variables.")
+
+rm(demo_df, demo_table)
+
+```
+
+
+
+
