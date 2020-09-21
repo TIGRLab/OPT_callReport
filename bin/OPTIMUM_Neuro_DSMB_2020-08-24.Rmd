@@ -1,5 +1,5 @@
 ---
-title: "OPTIMUM-Neuro conference call 2020-08-20"
+title: "OPTIMUM-Neuro conference call 2020-08-24"
 output: html_document
 always_allow_html: yes
 ---
@@ -18,16 +18,14 @@ always_allow_html: yes
     library(bsselectR)
     library(lubridate)
     library(textclean)
-
-
 ```
 
 ```{r data cleaning, include = FALSE, warning = FALSE}
 
 source('functions.R')
 #read in data
-  mri <- read.csv('../sources/OPTIMUM_2020-08-20_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
-  df <- read.csv('../sources/OPTIMUM_2020-08-20_Demo.csv', na.strings=c("","NA")) #contains just MRI
+  mri <- read.csv('../sources/OPTIMUM_2020-08-28_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
+  df <- read.csv('../sources/OPTIMUM_2020-08-28_Demo.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('../info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
@@ -80,7 +78,7 @@ recruit_df <- prepare_recruit_df(recruit_df)
  
 ```{r enrolment, echo = FALSE, include = FALSE, warning = FALSE}
 #add column that indicates if enrolled (where enrollment is 2 of 3 mri, blood, neuropsych)
-  enroll_df <- prepare_enroll_df(recruit_df) #make a new dataframe (did this because want new DF to consider only baseline)
+  enroll_df <- prepare_enroll_df(recruit_df, enroll_criteria = 1) #make a new dataframe (did this because want new DF to consider only baseline)
 
  
  

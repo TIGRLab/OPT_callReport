@@ -1,5 +1,5 @@
 ---
-title: "OPTIMUM-Neuro conference call 2020-08-20"
+title: "OPTIMUM-Neuro conference call 2020-09-17"
 output: html_document
 always_allow_html: yes
 ---
@@ -26,8 +26,8 @@ always_allow_html: yes
 
 source('functions.R')
 #read in data
-  mri <- read.csv('../sources/OPTIMUM_2020-08-20_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
-  df <- read.csv('../sources/OPTIMUM_2020-08-20_Demo.csv', na.strings=c("","NA")) #contains just MRI
+  mri <- read.csv('../sources/OPTIMUM_2020-09-17_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
+  df <- read.csv('../sources/OPTIMUM_2020-09-17_Demo.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('../info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)

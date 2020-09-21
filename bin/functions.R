@@ -22,7 +22,7 @@ prepare_init_df <- function(df, mri, sites){
   
   #merge mri and df dataframes
   df <- merge(df, mri, by=c('record_id', 'redcap_event_name'), all.x=TRUE)
-  
+  df$redcap_event_name <- as.factor(df$redcap_event_name)
   #pull out site code from subject IDs
   df$site <- substring(df$record_id, 1, 2)
   
@@ -85,7 +85,7 @@ prepare_recruit_df <- function(recruit_df){
   return(recruit_df)
 }
 
-prepare_enroll_df <- function(enroll_df) {
+prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
   #NOTE TO SELF FOR GABI: It seems like this is where enroll df starts only counting baseline. I think that I could just filter out 6 month follow up from baseline and calculate that way???  
   #NOTE TO SELF FOR GABI: I JUST COMMENTED THIS OUT 
   #take only baseline
@@ -160,7 +160,7 @@ prepare_enroll_df <- function(enroll_df) {
   
   #determine if enrollment criteria is met, i.e., at least 2/3 of mri, blood, and np completed
   enroll_df$enroll <- rowSums(enroll_df[,c('enroll_mri', 'enroll_bld', 'enroll_np')], na.rm = T) #calculate sum
-  enroll_df$enroll <- ifelse(enroll_df$enroll >= 2, 1, 0)
+  enroll_df$enroll <- ifelse(enroll_df$enroll >= enroll_criteria, 1, 0)
   
   #determine date of 2/3 of mri, blood, and psy completed
   enroll_dates <- c('enroll_mri_date','enroll_bld_date', 'enroll_np_date')
