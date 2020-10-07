@@ -1,5 +1,5 @@
 ---
-title: "OPTIMUM-Neuro conference call 2020-09-17"
+title: "OPTIMUM-Neuro conference call 2020-10-02"
 output: html_document
 always_allow_html: yes
 ---
@@ -9,7 +9,7 @@ always_allow_html: yes
 kable_version <- as.character( packageVersion( 'kableExtra' ) )
 if (compareVersion( kable_version, '1.1.0') > 0 )
   stop("kableExtra package must be version 1.1.0 - version ", kable_version,  
-       " is installed")
+       " is installed. Use 'install_version('kableExtra', '1.1.0')'.")
 
 # load graphics libraries
     library(plyr)
@@ -23,7 +23,8 @@ if (compareVersion( kable_version, '1.1.0') > 0 )
     library(bsselectR)
     library(lubridate)
     library(textclean)
-
+    library(zoo)
+    library(scales)
 
 ```
 
@@ -31,8 +32,8 @@ if (compareVersion( kable_version, '1.1.0') > 0 )
 
 source('functions.R')
 #read in data
-  mri <- read.csv('../sources/OPTIMUM_2020-09-17_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
-  df <- read.csv('../sources/OPTIMUM_2020-09-17_Demo.csv', na.strings=c("","NA")) #contains just MRI
+  mri <- read.csv('../sources/OPTIMUM_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
+  df <- read.csv('../sources/OPTIMUM_Demo.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('../info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
@@ -58,25 +59,27 @@ This report is meant to provide a quick overview of the OPTIMUM-Neuro study, to 
 ```{r recruitment, echo = FALSE, include = FALSE, warning = FALSE}
 
 #make a smaller dataframe
-recruit_df <- df[, c(
-  "record_id", 
-  "site",
-  "timepoint",
-  
-  "meta_consent_date", 
-  "meta_terminate_date",
-  "meta_terminate_reason",
-  
-  "plasma_blood_status", 
-  "plasma_blood_date",
-  
-  "mr_t1",
-  "mr_date",
-  
-  "dkefs_complete",
-  "dkefs_date_admin",
-  "rbans_complete",
-  "rbans_date_admin")] 
+recruit_df <- df %>% 
+  filter(redcap_repeat_instance==1 | is.na(redcap_repeat_instance)) %>%
+  select(
+    "record_id", 
+    "site",
+    "timepoint",
+    
+    "meta_consent_date", 
+    "meta_terminate_date",
+    "meta_terminate_reason",
+    
+    "plasma_blood_status", 
+    "plasma_blood_date",
+    
+    "mr_t1",
+    "mr_date",
+    
+    "dkefs_complete",
+    "dkefs_date_admin",
+    "rbans_complete",
+    "rbans_date_admin")
 
 recruit_df <- prepare_recruit_df(recruit_df)
  
@@ -86,12 +89,10 @@ recruit_df <- prepare_recruit_df(recruit_df)
 ```{r enrolment, echo = FALSE, include = FALSE, warning = FALSE}
 #add column that indicates if enrolled (where enrollment is 2 of 3 mri, blood, neuropsych)
   enroll_df <- prepare_enroll_df(recruit_df) #make a new dataframe (did this because want new DF to consider only baseline)
-
- 
  
 #merge back dataframes #what's the purpose of merging it here?
 recruit_df <- merge(recruit_df, enroll_df, by = c('record_id', 'timepoint'), all.x = TRUE)
-  
+
 ```
 
 ```{r, echo = FALSE, include = FALSE, warning = FALSE}
@@ -104,7 +105,7 @@ fu_due_list <- recruit_df%>% select(record_id,mri_fu_due, np_fu_due, bld_fu_due,
 
 fu_due_list <- fu_due_list[!duplicated(fu_due_list$record_id),]
 
-#maybe I actually need to compare this to how many ppl actuvally received their init mri
+#maybe I actually need to compare this to how many ppl actually received their init mri
 fu_df <- recruit_df %>% filter(.,timepoint=="6 mth FU") %>% select(.,-c(enroll_mri, enroll_mri_date)) 
 
 fu_df <- prep_fu_df(fu_df) %>% merge(.,fu_due_list, by=c('record_id'))
@@ -132,7 +133,7 @@ kable(recruit_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c',
   group_rows("Termination[note]", 7, 9, label_row_css = "background-color: #ddd; color: 999;") %>%
   column_spec(1, width = "20em", background = '#f5f5f5') %>%
   add_footnote(c("`Consent` counts all participants who signed an OPTIMUM-Neuro consent form.", 
-                 "`Enrollment` counts all participants who completed ≥2/3 of the MRI, bloodwork, and neuropsych at the baseline visit.",
+                 "`Enrollment` counts all participants who completed ≥1/3 of the MRI, bloodwork, and neuropsych at the baseline visit.",
                  "`Completion` counts all enrolled participants who completed the 24 mth FU visit.", 
                  "`Termination` counts participants coded as: 'not eligible for randomization', 'withdrew', 'lost to follow-up', 'death', 'investigator discretion', and 'other'. Termination does not capture participants who completed the study, i.e., this category is independent from `Completion`."), 
                notation = "number") %>%
@@ -147,11 +148,11 @@ Please switch between the tabs for baseline and 6 month follow-up numbers.
 
 <br>
 
-### Enrollment breakdown
+### Baseline
 
 ```{r enrollment_table, echo = FALSE, warning = FALSE}
 
-  enroll_table <- make_enroll_table(recruit_df, sites, targets)
+  enroll_table <- make_enroll_table(df, sites, targets)
 
 #add row names to make like demo table
 enroll_table <- cbind(metric = rownames(enroll_table), enroll_table)
@@ -182,9 +183,9 @@ kable(enroll_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 
 
 Here, the % column indicates retention - this is calculated as the percent of participants who received an evaluation at baseline who have also received their 6 month follow-up evaluation. 
 
-```{r, echo = FALSE, warning = FALSE, message=FALSE}
+```{r 6 Month Follow-up, echo = FALSE, warning = FALSE, message=FALSE}
 
-fu_table <- make_fu_table(fu_df, sites,targets)
+fu_table <- make_fu_table(df, sites)
 
 #add row names to make like demo table
 fu_table <- cbind(metric = rownames(fu_table), fu_table)
@@ -207,6 +208,30 @@ kable(fu_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')
      "`MRI` counts all participants who completed the T1 follow-up."), 
                notation = "number") %>%
   footnote(general = "Current month captures calendar month. The `%` columns describe percent retention - what proportion of participants who received their baseline scan have received their 6 month follow-up in time.")
+```
+
+### 24 Month Follow-up
+
+<br>
+
+``` {r 24 Month Follow-up, echo = FALSE}
+fu_24_table <- make_fu_24_table(df, sites)
+
+#table
+kable(fu_24_table, "html", escape = F, align = c('l', 'c', 'c', 'c', 'c', 'c', 'c')) %>%
+  kable_styling("hover", "condensed", full_width = T) %>%
+  add_header_above(c(" ", "CU" = 2, "LA" = 2, "UP" = 2, "UT" = 2, "WU" = 2, " ")) %>%
+  group_rows('Neuropsych[note]', 1, 2, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("Blood[note]", 3, 4, label_row_css = "background-color: #ddd; color: 999;") %>%
+  group_rows("MRI[note]", 5, 6, label_row_css = "background-color: #ddd; color: 999;") %>%
+  column_spec(1, width = "20em", background = '#f5f5f5') %>%
+  add_footnote(c(
+     "`Neuropsych` counts all participants who completed both the follow-up RBANS and D-KEFS in full.",
+     "`Blood` counts all participants who submitted one aliquot of plasma for bloodwork follow-up.",
+     "`MRI` counts all participants who completed the T1 follow-up."), 
+               notation = "number") %>%
+  footnote(general = "Current month captures calendar month. The `%` columns describe percent retention - what proportion of participants who received their baseline scan have received their 6 month follow-up in time.")
+
 ```
 
 ------
@@ -242,6 +267,27 @@ rm(demo_df, demo_table)
 
 ```
 
+### Progress Plots
+<br>
+Some plots of research progress by site. 
+```{r plots, echo=FALSE}
 
+enroll_progress <- data.frame( month=as.yearmon( seq(from=as.Date('2017-12-01'), to=Sys.Date(), by='month')))
+for (site in sites) {
+  enroll_progress[[ paste0('enrolled_', site) ]] <- sapply( enroll_progress$month, function(x){
+    sum(as.yearmon(filter(recruit_df, site.x==site)$enroll_date) %in% x)
+  } )
+  
+  enroll_progress[[ paste0(site, '_total') ]] <- cumsum(enroll_progress[[ paste0('enrolled_', site) ]])
+}
 
+enroll_progress <- select(enroll_progress, month, contains('_total')) %>%
+  melt(id.vars='month')
 
+ggplot(enroll_progress) + geom_line( aes(x=month, y=value, colour=variable)) +
+xlab('Month') +
+ylab('# Enrolled')
+
+# TODO: add bar charts for recruitment/progress numbers
+
+```

@@ -13,6 +13,13 @@ library(bsselectR)
 library(lubridate)
 library(textclean)
 
+# returns the previous month if today's date is earlier than the 15th
+get_month <- function(){
+  if (day(Sys.Date()) < 15)
+    return (Sys.Date() %m-% months(1))
+  else
+    return (Sys.Date())
+}
 
 prepare_init_df <- function(df, mri, sites){
   
@@ -56,7 +63,7 @@ prepare_recruit_df <- function(recruit_df){
   recruit_df$rbans_date <- as.Date(recruit_df$rbans_date_admin, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to date format
   
   #get current date and add to dataframe
-  recruit_df$currentYm <- "2019-07-31" #add current sysdate to df
+  recruit_df$currentYm <- as.character(Sys.Date()) #add current sysdate to df
   recruit_df$currentYm_str <- as.character(substr(recruit_df$currentYm, 1, 7)) #store month and year, as character
   
   #add column that indicates if consented, consent date, and if this month
@@ -91,6 +98,8 @@ prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
   #take only baseline
   enroll_df <- enroll_df[(enroll_df$timepoint == 'baseline'),] 
   
+  today_str <- as.character(Sys.Date())
+  
   #first, check if T1 complete, and if date is this month
   #note - here, 'complete' means just T1 complete
   names(enroll_df)[names(enroll_df) == "mr_t1"] <- "enroll_mri" #change name of status column
@@ -101,8 +110,8 @@ prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
   enroll_df$enroll_mri_date <- as.Date(enroll_df$enroll_mri_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert date to datetime format
   enroll_df$enroll_mri_mth <- as.character(substr(enroll_df$enroll_mri_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_mri_mthT <- enroll_df$enroll_mri_mth %in% enroll_df$currentYm_str #logical T or F- was MRI this month?
-  enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < "2019-07-31", 1, 0)
+  enroll_df$mri_fu_due <-  ifelse(enroll_df$enroll_mri_date %m+% months(6) < today_str, 1, 0)
+  enroll_df$mri_fu_7_mos <-  ifelse(enroll_df$enroll_mri_date %m+% months(7) < today_str, 1, 0)
   enroll_df$mri_fu_mth <- as.character(substr(enroll_df$enroll_mri_date %m+% months(6), 1, 7)) 
   enroll_df$mri_fu_mthT <- enroll_df$mri_fu_mth %in% enroll_df$currentYm_str
   #note: one thing to consider, do we want to count 6mos from that specific assessment, or anchor everything to their consent date? leaning toward the latter tbh.
@@ -114,8 +123,8 @@ prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
   enroll_df$enroll_bld_date <- as.Date(enroll_df$enroll_bld_date, format = "%Y-%m-%d", origin = "1970-01-01") #convert to datetime 
   enroll_df$enroll_bld_mth <- as.character(substr(enroll_df$enroll_bld_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_bld_mthT <- enroll_df$enroll_bld_mth %in% enroll_df$currentYm_str #logical T or F - was blood this month?    
-  enroll_df$bld_fu_due <-  ifelse(enroll_df$enroll_bld_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$bld_fu_7_mos <-  ifelse(enroll_df$enroll_bld_date %m+% months(7) < "2019-07-31", 1, 0) 
+  enroll_df$bld_fu_due <-  ifelse(enroll_df$enroll_bld_date %m+% months(6) < today_str, 1, 0)
+  enroll_df$bld_fu_7_mos <-  ifelse(enroll_df$enroll_bld_date %m+% months(7) < today_str, 1, 0) 
   
   #third, check if neuropsych complete, and if data is this month
   #note - here, 'complete' means rbans and dkefs done in entirity
@@ -154,8 +163,8 @@ prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
   enroll_df$enroll_np_date <- as.Date(enroll_df$enroll_np_date, origin = "1970-01-01") #turn back into date format
   enroll_df$enroll_np_mth <- as.character(substr(enroll_df$enroll_np_date, 1, 7)) #store month and year, as character
   enroll_df$enroll_np_mthT <- enroll_df$enroll_np_mth %in% enroll_df$currentYm_str #logical T or F- was criteria met this month?
-  enroll_df$np_fu_due <-  ifelse(enroll_df$enroll_np_date %m+% months(6) < "2019-07-31", 1, 0)
-  enroll_df$np_fu_7_mos <-  ifelse(enroll_df$enroll_np_date %m+% months(7) < "2019-07-31", 1, 0)
+  enroll_df$np_fu_due <-  ifelse(enroll_df$enroll_np_date %m+% months(6) < today_str, 1, 0)
+  enroll_df$np_fu_7_mos <-  ifelse(enroll_df$enroll_np_date %m+% months(7) < today_str, 1, 0)
   
   
   #determine if enrollment criteria is met, i.e., at least 2/3 of mri, blood, and np completed
@@ -186,7 +195,7 @@ prepare_enroll_df <- function(enroll_df, enroll_criteria=2) {
 
 prep_fu_df <- function(fu_df){
   
-  fu_df$currentYm <- "2019-07-31" #add current sysdate to df
+  fu_df$currentYm <- as.character(get_month()) #add current sysdate to df
   fu_df$currentYm_str <- as.character(substr(fu_df$currentYm, 1, 7)) #store month and year, as character
   
   
@@ -277,119 +286,93 @@ prep_fu_df <- function(fu_df){
   
 }
 
-make_enroll_table <- function(recruit_df, sites, targets){
-  # create vector of enrollment variables
-  enroll_vars <- c(
-    "enroll_np_mthT",
-    "enroll_np",
-    "enroll_bld_mthT",
-    "enroll_bld", 
-    "enroll_mri_mthT",
-    "enroll_mri"
-  ) 
-  
-  #turn all NAs into 0
-  recruit_df[, enroll_vars] <- apply(recruit_df[, enroll_vars], 2, function(x){replace(x, is.na(x), 0)})
-  
+make_enroll_table <- function(df, sites, targets){
   #initialize dataframe and names columns and rows
-  enroll_table <- data.frame(matrix(ncol=11, nrow=length(enroll_vars)))
+  out_table <- data.frame(matrix(ncol=11, nrow=6))
+  
+  target_month <- filter(targets, month==format(get_month(), '%Y-%m'))$per_month
+  target_total <- filter(targets, month==format(get_month(), '%Y-%m'))$target
   
   #names of columns and rows on table
-  names(enroll_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
-  row.names(enroll_table) <- c(
-    "completed neuropsych current month",
+  names(out_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
+  row.names(out_table) <- c(
+    paste0("completed neuropsych - ", as.yearmon(get_month())),
     "completed neuropsych to date", 
-    "completed blood current month",
+    paste0("completed blood - ", as.yearmon(get_month())),
     "completed blood to date",
-    "completed MRI current month",
+    paste0("completed MRI - ", as.yearmon(get_month())),
     "completed MRI to date")
   
-  # initialize counters (j = row, k = column)
-  j <- 1
-  k <- 1
+  df_24 <- filter(df, timepoint=='baseline')
+  by_site <- group_by(df_24, site, .drop=FALSE)
   
-  for (var in enroll_vars) {
-    for (site in sites) {
-      enroll_table[j,k] <- sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, var], na.rm = TRUE)
-      k <- k + 2
+  # TODO: fix this to use dplyr/summarise() instead of loops
+  
+  # Neuropsych
+  neuro_24 <- filter(by_site, dkefs_complete==1, rbans_complete==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    out_table[1,i] = sum( filter( neuro_24, as.yearmon(dkefs_date_admin) == as.yearmon(get_month()) )$site == site )
+    # all time
+    out_table[2,i] = sum(neuro_24$site == site)
+    i <- i+2
+  }
+  
+  # Blood
+  blood_24 <- filter(by_site, plasma_blood_status==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    out_table[3,i] = sum( filter( blood_24, as.yearmon(plasma_blood_date) == as.yearmon(get_month()) )$site == site )
+    # all time
+    out_table[4,i] = sum(blood_24$site == site)
+    i <- i+2
+  }
+  
+  # MRI 
+  mri_24 <- filter(by_site, mr_t1==1)
+  
+  if (dim(mri_24)[1] !=0){
+    i <- 1
+    for (site in sites){
+      # this month
+      out_table[5,i] = sum( filter( mri_24, as.yearmon(mr_date) == as.yearmon(get_month()) )$site == site )
+      # all time
+      out_table[6,i] = sum(mri_24$site == site)
+      i <- i+2
     }
-    k <- 1
-    j <- j + 1
+  } 
+  else {
+    i <- 1
+    for (site in sites){
+      out_table[5,i] = 0
+      out_table[6,i] = 0
+      i <- i+2
+    }
   }
   
-  # add in totals
-  j <- 1
-  k <- 1
-  for (var in enroll_vars) {
-    enroll_table[j,11] <- sum(recruit_df[recruit_df$enroll == 1, var], na.rm = TRUE)
-    j <- j + 1
+  # add totals
+  for (i in 1:nrow(out_table)){
+    out_table[i,ncol(out_table)] = sum(out_table[i,], na.rm=TRUE)
   }
   
-  #add in percentages - neuropsych current month
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    enroll_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
+  # add percentages of targets
+  i <- 2
+  for (site in sites){
+    out_table[1,i] = percent(out_table[1,i-1]/target_month)
+    out_table[2,i] = percent(out_table[2,i-1]/target_total)
+    out_table[3,i] = percent(out_table[3,i-1]/target_month)
+    out_table[4,i] = percent(out_table[4,i-1]/target_total)
+    out_table[5,i] = percent(out_table[5,i-1]/target_month)
+    out_table[6,i] = percent(out_table[6,i-1]/target_total)
+    i <- i+2
   }
   
-  #add in percentages - neuropsych to date
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
-    enroll_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  #add in percentages - blood current month
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    enroll_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  #add in percentages - blood to date
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
-    enroll_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  #add in percentages - mri current month
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    enroll_table[5,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  #add in percentages - mri to date
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site & recruit_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
-    enroll_table[6,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  
-  
-  return(enroll_table)
+  return(out_table)
 }
 
-
-
-
-
 make_recruit_table <- function(recruit_df, sites, targets) {
-  
   
   # create vector of recruitment variables
   recruit_vars <- c(
@@ -412,73 +395,95 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   #names of columns and rows on demo_table
   names(recruit_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
   row.names(recruit_table) <- c(
-    "consented current month",
+    paste0("consented - ", as.yearmon(get_month())),
     "consented to date", 
-    "enrolled current month",
+    paste0("enrolled - ", as.yearmon(get_month())),
     "enrolled to date",
-    "completed current month",
+    paste0("completed - ", as.yearmon(get_month())),
     "completed to date",
     "terminated during baseline",
-    "terminated during 6 mth FU",
-    "terminated during 24 mth FU")
+    "terminated during 6 month follow-up",
+    "terminated during 24 month follow-up")
   
-  # initialize counters (j = row, k = column)
-  j <- 1
-  k <- 1
+  consented <- filter(recruit_df, !is.na(meta_consent_date.x)) 
+  consented_this_month <- filter(consented, 
+                                 as.yearmon(meta_consent_date.x) == as.yearmon(get_month()))
   
-  for (var in recruit_vars) {
-    for (site in sites) {
-      recruit_table[j,k] <- sum(recruit_df[recruit_df$site.x == site, var], na.rm = TRUE)
-      k <- k + 2
-    }
-    k <- 1
-    j <- j + 1
+  # pt is considered enrolled if they have at least 1 of 3 measures at baseline
+  enrolled <- filter(recruit_df, timepoint=='baseline') %>%
+              mutate(mr_complete = mr_t1==1, 
+                     blood_complete = plasma_blood_status.x==1) %>%
+              mutate(np_complete = dkefs_complete.x == 1 & rbans_complete.x == 1) %>%
+              mutate(n_measures = rowSums(select(., np_complete, mr_complete, blood_complete), na.rm=TRUE)
+                     ) %>%
+              filter(n_measures >= 1)
+  
+  enrolled_this_month <- filter(enrolled, 
+                                 as.yearmon(enroll_date) == as.yearmon(get_month()))
+  
+  
+  # TODO: determine when someone is considered 'completed' - after 24 months?
+  completed <- filter(recruit_df, 
+                      timepoint=='24 mth FU',
+                      dkefs_complete.x==1,
+                      rbans_complete.x==1,
+                      mr_t1==1,
+                      plasma_blood_status.x==1) 
+  
+  # TODO: figure out what date is best to use to determine when completed
+  # completed_this_month <- filter(completed, 
+  #                               as.yearmon(mr_date) == as.yearmon(get_month()))
+  
+  terminated <- filter(recruit_df, !is.na(meta_terminate_date.x)) 
+  terminated_bl <- filter(terminated, timepoint=='baseline')
+  terminated_6m <- filter(terminated, timepoint=='6 mth FU')
+  terminated_24 <- filter(terminated, timepoint=='24 mth FU')
+  
+  target_month <- filter(targets, month==format(get_month(), '%Y-%m'))$per_month
+  target_total <- filter(targets, month==format(get_month(), '%Y-%m'))$target
+  
+  i <- 1
+  for (site in sites){
+    # Consent 
+    recruit_table[1,i] = nrow(filter(consented_this_month, site.x==site))
+    recruit_table[1,i+1] = percent( recruit_table[1,i]/target_month )
+    
+    recruit_table[2,i] = nrow(filter(consented, site.x==site))
+    recruit_table[2,i+1] = percent( recruit_table[[2,i]]/target_total )
+    
+    # Enrollment
+    recruit_table[3,i] = nrow(filter(enrolled_this_month, site.x==site))
+    recruit_table[3,i+1] = percent( recruit_table[3,i]/target_month )
+    
+    recruit_table[4,i] = nrow(filter(enrolled, site.x==site))
+    recruit_table[4,i+1] = percent( recruit_table[[4,i]]/target_total )
+    
+    # Completion
+    # recruit_table[5,i] = nrow(filter(completed_this_month, site.x==site))
+    # recruit_table[5,i+1] = percent( recruit_table[5,i]/target_month )
+    
+    recruit_table[6,i] = nrow(filter(completed, site.x==site))
+    # TODO: figure out how many people should be completed based on 2 years prior
+    # recruit_table[6,i+1] = percent( recruit_table[[6,i]]/target_total )
+    
+    # Termination
+    recruit_table[7,i] = nrow(filter(terminated_bl, site.x==site))
+    recruit_table[8,i] = nrow(filter(terminated_6m, site.x==site))
+    recruit_table[9,i] = nrow(filter(terminated_24, site.x==site))
+    
+    i <- i+2
   }
   
-  # add in totals
-  j <- 1
-  k <- 1
-  for (var in recruit_vars) {
-    recruit_table[j,11] <- sum(recruit_df[var], na.rm = TRUE)
-    j <- j + 1
-  }
+  # add totals to last column
+  recruit_table[1,11] = nrow(consented_this_month)
+  recruit_table[2,11] = nrow(consented)
   
-  # add in percentages
-  # consented current month
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site, 'meta_consent_mthT.x'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    recruit_table[1,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
+  recruit_table[3,11] = nrow(enrolled_this_month)
+  recruit_table[4,11] = nrow(enrolled)
   
-  # consented total
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site, 'consented.x'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
-    recruit_table[2,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  # enrollment current month
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site, 'enroll_mthT'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    recruit_table[3,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
-  
-  # enrollement total
-  j <- 2
-  for (site in sites) {
-    n = sum(recruit_df[recruit_df$site.x == site, 'enroll'])
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'target']
-    recruit_table[4,j] <- sprintf("%1.0f%%", 100*round(n/d, 2))
-    j <- j + 2
-  }
+  recruit_table[7,11] = nrow(terminated_bl)
+  recruit_table[8,11] = nrow(terminated_6m)
+  recruit_table[9,11] = nrow(terminated_24)
   
   
   #add row names to make like demo table
@@ -488,10 +493,6 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   
   return(recruit_table)
 }
-
-
-
-
 
 make_demo_table <- function(df, sites){
   
@@ -567,137 +568,191 @@ make_demo_table <- function(df, sites){
   
 }
 
-
-
-make_fu_table <- function(fu_df, sites,targets){
-  
-  fu_df_update <- fu_df %>% select(record_id, enroll_mri, enroll_mri_mthT, mri_fu_due = mri_fu_due.y,mri_fu_7_mos=mri_fu_7_mos.y, site=site.x,enroll_mri_init = enroll_mri_init.y, mri_fu_mth = mri_fu_mth.y, mri_fu_mthT = mri_fu_mthT.y) %>%
-    mutate_at(vars(enroll_mri, mri_fu_due,mri_fu_7_mos), funs(if_else( is.na(.), 0, .) ) ) %>%
-    mutate(., due=(enroll_mri!=1 & mri_fu_due==1), overdue=(enroll_mri!=1 & mri_fu_7_mos==1), complete=(enroll_mri==1))
-  
-  total_scanned <- sum(fu_df_update$complete, na.rm=TRUE)
-  
-  completed_current_mo <- sum(fu_df_update$enroll_mri_mthT)
-  expected_current_mo <- sum(fu_df_update$mri_fu_mthT)  #could hypothetically be fulfilled w/o actually scanning all expected, i think thats ok though #do i want it to subtract ppl who havent already done it in the previous month?? that seems complicated
-  
-  # ^ subtract those where mri_fu_mthT is true AND enroll_mri is true AND enroll_mri_mthT is not true? 
-  
-  
-  retention_denom <- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1)
-  #do i also want to get rid of ppl who were scanned early and otherwise would be due?
-  retention_numer<- filter(fu_df_update, enroll_mri_init==1) %>% filter(mri_fu_due==1) %>% filter(enroll_mri==1)
-  
-  retention_perc <- (nrow(retention_numer)/nrow(retention_denom))*100
-  
-  
-  fu_retention_stats <- fu_df_update %>% group_by(site) %>% 
-    filter(enroll_mri_init==1 & mri_fu_due==1) %>% 
-    summarize(denom=sum(mri_fu_due), numer=sum(enroll_mri)) %>% mutate(perc=numer/denom*100)
-  
-  # create vector of enrollment variables
-  enroll_vars <- c(
-    "enroll_np_mthT",
-    "enroll_np",
-    "enroll_bld_mthT",
-    "enroll_bld", 
-    "enroll_mri_mthT",
-    "enroll_mri"
-  ) 
-  
-  #turn all NAs into 0
-  fu_df[, enroll_vars] <- apply(fu_df[, enroll_vars], 2, function(x){replace(x, is.na(x), 0)})
+make_fu_table <- function(df, sites){
   
   #initialize dataframe and names columns and rows
-  fu_table <- data.frame(matrix(ncol=11, nrow=length(enroll_vars)))
+  fu_table <- data.frame(matrix(ncol=11, nrow=6))
   
   #names of columns and rows on table
   names(fu_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
   row.names(fu_table) <- c(
-    "completed neuropsych current month",
+    paste0("completed neuropsych - ", as.yearmon(get_month())),
     "completed neuropsych to date", 
-    "completed blood current month",
+    paste0("completed blood - ", as.yearmon(get_month())),
     "completed blood to date",
-    "completed MRI current month",
+    paste0("completed MRI - ", as.yearmon(get_month())),
     "completed MRI to date")
   
-  # initialize counters (j = row, k = column)
-  j <- 1
-  k <- 1
+  by_site <- filter(df, timepoint=='6 mth FU') %>%
+              group_by(site, .drop=FALSE)
   
-  for (var in enroll_vars) {
-    for (site in sites) {
-      fu_table[j,k] <- sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, var], na.rm = TRUE)
-      k <- k + 2
+  # TODO: fix this to use dplyr/summarise() instead of loops
+  
+  # Neuropsych
+  neuro_df <- filter(by_site, dkefs_complete==1, rbans_complete==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    fu_table[1,i] = sum( filter( neuro_df, as.yearmon(dkefs_date_admin) == as.yearmon(get_month()) )$site == site )
+    # all time
+    fu_table[2,i] = sum(neuro_df$site == site)
+    i <- i+2
+  }
+  
+  # Blood
+  blood_df <- filter(by_site, plasma_blood_status==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    fu_table[3,i] = sum( filter( blood_df, as.yearmon(plasma_blood_date) == as.yearmon(get_month()) )$site == site )
+    # all time
+    fu_table[4,i] = sum(blood_df$site == site)
+    i <- i+2
+  }
+  
+  # MRI 
+  mri_df <- filter(by_site, mr_t1==1)
+  
+  if (dim(mri_df)[1] !=0){
+    i <- 1
+    for (site in sites){
+      # this month
+      fu_table[5,i] = sum( filter( mri_df, as.yearmon(mr_date) == as.yearmon(get_month()) )$site == site )
+      # all time
+      fu_table[6,i] = sum(mri_df$site == site)
+      i <- i+2
     }
-    k <- 1
-    j <- j + 1
+  } 
+  else {
+    i <- 1
+    for (site in sites){
+      fu_table[5,i] = 0
+      fu_table[6,i] = 0
+      i <- i+2
+    }
   }
   
-  # add in totals
-  j <- 1
-  k <- 1
-  for (var in enroll_vars) {
-    fu_table[j,11] <- sum(fu_df[fu_df$enroll == 1, var], na.rm = TRUE)
-    j <- j + 1
+  # add totals
+  for (i in 1:nrow(fu_table)){
+    fu_table[i,ncol(fu_table)] = sum(fu_table[i,], na.rm=TRUE)
   }
   
-  #add in percentages - neuropsych current month
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np_mthT'], na.rm=TRUE)
-    d = targets[targets$month == as.character(substr("2019-07-31", 1, 7)), 'per_month']
-    fu_table[1,j] <-" " 
-    j <- j + 2
-  }
+  # add percentages of targets
+  neuro_due <- filter(df, timepoint=='baseline',
+                      dkefs_complete==1,
+                      as.Date(dkefs_date_admin) %m+% months(6) < get_month()) %>%
+              count(site)
+  blood_due <- filter(df, timepoint=='baseline',
+                      plasma_blood_status==1,
+                      as.Date(plasma_blood_date) %m+% months(6) < get_month()) %>%
+              count(site)
+  mri_due   <- filter(df, timepoint=='baseline',
+                      mr_t1==1,
+                      as.Date(mr_date) %m+% months(6) < get_month()) %>%
+              count(site)
   
-  #add in percentages - neuropsych to date
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_np'], na.rm=TRUE)
-    d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'np_fu_due.y'], na.rm=TRUE)
-    fu_table[2,j] <-pmin(100*round(n/d, 2), 100) #this is temporary to cap it at 100%
-    fu_table[2,j] <- paste0(fu_table[2,j], "%") 
-    j <- j + 2
-  }
-  
-  #add in percentages - blood current month
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld_mthT'], na.rm=TRUE)
-    d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'bld_fu_due.y'], na.rm=TRUE)
-    fu_table[3,j] <- " " 
-    j <- j + 2
-  }
-  
-  #add in percentages - blood to date
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_bld'], na.rm=TRUE)
-    d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'bld_fu_due.y'], na.rm=TRUE)
-    fu_table[4,j] <-pmin(100*round(n/d, 2), 100) #this is temporary to cap it at 100%
-    fu_table[4,j] <- paste0(fu_table[4,j], "%") 
-    j <- j + 2
-  }
-  
-  #add in percentages - mri current month
-  #change to and enroll_mri==1
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri_mthT'], na.rm=TRUE)
-    d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'fu_due'], na.rm=TRUE)
-    fu_table[5,j] <- " " 
-    j <- j + 2
-  }
-  
-  #add in percentages - mri to date
-  j <- 2
-  for (site in sites) {
-    n = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'enroll_mri'], na.rm=TRUE)
-    d = sum(fu_df[fu_df$site.x == site & fu_df$enroll == 1, 'mri_fu_due.y'], na.rm=TRUE)
-    fu_table[6,j] <-  paste0(round(fu_retention_stats[which(fu_retention_stats$site==site),]$perc, 0), "%")
-    j <- j + 2
+  i <- 2
+  for (s in sites){
+    fu_table[2,i] = percent(fu_table[2,i-1]/(neuro_due %>% filter(site==s))$n)
+    fu_table[4,i] = percent(fu_table[4,i-1]/(blood_due %>% filter(site==s))$n)
+    fu_table[6,i] = percent(fu_table[6,i-1]/(mri_due %>% filter(site==s))$n)
+    i <- i+2
   }
   return(fu_table)
+}
+
+make_fu_24_table <- function(df, sites) {
+  #initialize dataframe and names columns and rows
+  fu_table <- data.frame(matrix(ncol=11, nrow=6))
+  
+  #names of columns and rows on table
+  names(fu_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
+  row.names(fu_table) <- c(
+    paste0("completed neuropsych - ", as.yearmon(get_month())),
+    "completed neuropsych to date", 
+    paste0("completed blood - ", as.yearmon(get_month())),
+    "completed blood to date",
+    paste0("completed MRI - ", as.yearmon(get_month())),
+    "completed MRI to date")
+
+  df_24 <- filter(df, timepoint=='24 mth FU')
+  by_site <- group_by(df_24, site, .drop=FALSE)
+  
+  # TODO: fix this to use dplyr/summarise() instead of loops
+  
+  # Neuropsych
+  neuro_24 <- filter(by_site, dkefs_complete==1, rbans_complete==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    fu_table[1,i] = sum( filter( neuro_24, as.yearmon(dkefs_date_admin) == as.yearmon(get_month()) )$site == site )
+    # all time
+    fu_table[2,i] = sum(neuro_24$site == site)
+    i <- i+2
+  }
+  
+  # Blood
+  blood_24 <- filter(by_site, plasma_blood_status==1)
+  i <- 1
+  for (site in sites){
+    # this month
+    fu_table[3,i] = sum( filter( blood_24, as.yearmon(plasma_blood_date) == as.yearmon(get_month()) )$site == site )
+    # all time
+    fu_table[4,i] = sum(blood_24$site == site)
+    i <- i+2
+  }
+  
+  # MRI 
+  mri_24 <- filter(by_site, mr_t1==1)
+  
+  if (dim(mri_24)[1] !=0){
+    i <- 1
+    for (site in sites){
+      # this month
+      fu_table[5,i] = sum( filter( mri_24, as.yearmon(mr_date) == as.yearmon(get_month()) )$site == site )
+      # all time
+      fu_table[6,i] = sum(mri_24$site == site)
+      i <- i+2
+    }
+  } 
+  else {
+    i <- 1
+    for (site in sites){
+      fu_table[5,i] = 0
+      fu_table[6,i] = 0
+      i <- i+2
+    }
+  }
+  
+  # add totals
+  for (i in 1:nrow(fu_table)){
+    fu_table[i,ncol(fu_table)] = sum(fu_table[i,], na.rm=TRUE)
+  }
+  
+  # add percentages of targets
+  neuro_due <- filter(df, timepoint=='baseline',
+                      dkefs_complete==1,
+                      as.Date(dkefs_date_admin) %m+% months(24) < get_month()) %>%
+    count(site)
+  blood_due <- filter(df, timepoint=='baseline',
+                      plasma_blood_status==1,
+                      as.Date(plasma_blood_date) %m+% months(24) < get_month()) %>%
+    count(site)
+  mri_due   <- filter(df, timepoint=='baseline',
+                      mr_t1==1,
+                      as.Date(mr_date) %m+% months(24) < get_month()) %>%
+    count(site)
+  
+  i <- 2
+  for (s in sites){
+    fu_table[2,i] = percent(fu_table[2,i-1]/(neuro_due %>% filter(site==s))$n)
+    fu_table[4,i] = percent(fu_table[4,i-1]/(blood_due %>% filter(site==s))$n)
+    fu_table[6,i] = percent(fu_table[6,i-1]/(mri_due %>% filter(site==s))$n)
+    i <- i+2
+  }
+  
+  return(fu_table)
+  
 }
 
 
