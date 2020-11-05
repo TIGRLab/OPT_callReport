@@ -422,19 +422,25 @@ make_recruit_table <- function(recruit_df, sites, targets) {
                                  as.yearmon(enroll_date) == as.yearmon(get_month()))
   
   
-  # TODO: determine when someone is considered 'completed' - after 24 months?
-  completed <- filter(recruit_df, 
-                      timepoint=='24 mth FU',
-                      dkefs_complete.x==1,
-                      rbans_complete.x==1,
-                      mr_t1==1,
-                      plasma_blood_status.x==1) 
+  # Completed could be considered as having 1/3 measures completed at 24 mo:
+  # completed <- filter(recruit_df, timepoint=='24 mth FU') %>%
+  #               mutate(mr_complete = mr_t1==1,
+  #                      blood_complete = plasma_blood_status.x==1) %>%
+  #               mutate(np_complete = dkefs_complete.x == 1 & rbans_complete.x == 1) %>%
+  #               mutate(n_measures = rowSums(select(., np_complete, mr_complete, blood_complete), na.rm=TRUE)
+  #                       ) %>%
+  #               filter(n_measures >= 1)
+  
+  # Pts are counted as completed when their baseline tracking form in REDCap is
+  # marked as 'completed'
+  completed <- filter(recruit_df, completed.x==1)
   
   # TODO: figure out what date is best to use to determine when completed
   # completed_this_month <- filter(completed, 
   #                               as.yearmon(mr_date) == as.yearmon(get_month()))
   
-  terminated <- filter(recruit_df, !is.na(meta_terminate_date.x)) 
+  # terminated <- filter(recruit_df, !is.na(meta_terminate_date.x)) 
+  terminated = filter(recruit_df, terminated.x==1)
   terminated_bl <- filter(terminated, timepoint=='baseline')
   terminated_6m <- filter(terminated, timepoint=='6 mth FU')
   terminated_24 <- filter(terminated, timepoint=='24 mth FU')
@@ -480,6 +486,8 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   
   recruit_table[3,11] = nrow(enrolled_this_month)
   recruit_table[4,11] = nrow(enrolled)
+  
+  recruit_table[6,11] = nrow(completed)
   
   recruit_table[7,11] = nrow(terminated_bl)
   recruit_table[8,11] = nrow(terminated_6m)
