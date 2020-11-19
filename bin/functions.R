@@ -395,11 +395,11 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   #names of columns and rows on demo_table
   names(recruit_table) <- c(paste0(c('n', '%', 'n', '%', 'n', '%', 'n', '%', 'n', '%', 'total')))
   row.names(recruit_table) <- c(
-    paste0("consented - ", as.yearmon(get_month())),
+    "consented - past month",
     "consented to date", 
-    paste0("enrolled - ", as.yearmon(get_month())),
+    "enrolled - past month",
     "enrolled to date",
-    paste0("completed - ", as.yearmon(get_month())),
+    "completed - past month",
     "completed to date",
     "terminated during baseline",
     "terminated during 6 month follow-up",
@@ -407,7 +407,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   
   consented <- filter(recruit_df, !is.na(meta_consent_date.x)) 
   consented_this_month <- filter(consented, 
-                                 as.yearmon(meta_consent_date.x) == as.yearmon(get_month()))
+                                 meta_consent_date.x > Sys.Date() %m-% months(1))
   
   # pt is considered enrolled if they have at least 1 of 3 measures at baseline
   enrolled <- filter(recruit_df, timepoint=='baseline') %>%
@@ -419,7 +419,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
               filter(n_measures >= 1)
   
   enrolled_this_month <- filter(enrolled, 
-                                 as.yearmon(enroll_date) == as.yearmon(get_month()))
+                                 enroll_date > Sys.Date() %m-% months(1))
   
   
   # Completed could be considered as having 1/3 measures completed at 24 mo:
@@ -436,8 +436,8 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   completed <- filter(recruit_df, completed.x==1)
   
   # TODO: figure out what date is best to use to determine when completed
-  # completed_this_month <- filter(completed, 
-  #                               as.yearmon(mr_date) == as.yearmon(get_month()))
+  completed_this_month <- filter(completed,
+                               meta_terminate_date.x > Sys.Date() %m-% months(1))
   
   # terminated <- filter(recruit_df, !is.na(meta_terminate_date.x)) 
   terminated = filter(recruit_df, terminated.x==1)
@@ -465,7 +465,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
     recruit_table[4,i+1] = percent( recruit_table[[4,i]]/target_total )
     
     # Completion
-    # recruit_table[5,i] = nrow(filter(completed_this_month, site.x==site))
+    recruit_table[5,i] = nrow(filter(completed_this_month, site.x==site))
     # recruit_table[5,i+1] = percent( recruit_table[5,i]/target_month )
     
     recruit_table[6,i] = nrow(filter(completed, site.x==site))
@@ -487,6 +487,7 @@ make_recruit_table <- function(recruit_df, sites, targets) {
   recruit_table[3,11] = nrow(enrolled_this_month)
   recruit_table[4,11] = nrow(enrolled)
   
+  recruit_table[5,11] = nrow(completed_this_month)
   recruit_table[6,11] = nrow(completed)
   
   recruit_table[7,11] = nrow(terminated_bl)
