@@ -1,5 +1,5 @@
 ---
-title: "OPTIMUM-Neuro conference call 2020-11-20"
+title: "OPTIMUM-Neuro conference call 2021-01-22"
 output: html_document
 always_allow_html: yes
 ---
@@ -32,8 +32,8 @@ if (compareVersion( kable_version, '1.1.0') > 0 )
 
 source('functions.R')
 #read in data
-  mri <- read.csv('../sources/OPTIMUM_2020-11-19_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
-  df <- read.csv('../sources/OPTIMUM_2020-11-19_Demo.csv', na.strings=c("","NA")) #contains just MRI
+  mri <- read.csv('../sources/OPTIMUM_2021_01_21_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
+  df <- read.csv('../sources/OPTIMUM_2021_01_21_Demo.csv', na.strings=c("","NA")) #contains just MRI
   targets <- read.csv('../info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
@@ -289,5 +289,28 @@ xlab('Month') +
 ylab('# Enrolled')
 
 # TODO: add bar charts for recruitment/progress numbers
+
+```
+``` {r completion numbers by site, echo=FALSE}
+
+# Find all participants with at least one 24 month measure completed
+df_24 <- filter(recruit_df, timepoint=='24 mth FU') %>%
+            mutate(mr_complete = mr_t1==1,
+                   blood_complete = plasma_blood_status.x==1,
+                   np_complete = dkefs_complete.x==1 & rbans_complete.x==1) %>%
+            mutate(n_measures = rowSums(select(., np_complete, mr_complete, blood_complete), na.rm=TRUE)) %>%
+            filter(n_measures>0) %>%
+            select(record_id, site.x, timepoint, n_measures, mr_complete, blood_complete, np_complete)
+
+# Find all participants marked complete
+marked_complete <- recruit_df %>% filter(completed.x==1)
+
+# produce DF of participants not marked complete
+not_complete <- df_24 %>% filter( !(record_id %in% marked_complete$record_id) )
+
+for (site in sites){
+   filename = paste0('participants_not_complete_', site, '.csv')
+   write.csv(not_complete %>% filter(site.x==site), filename)
+}
 
 ```
