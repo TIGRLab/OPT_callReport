@@ -25,7 +25,7 @@ prepare_init_df <- function(df, mri, sites){
   
   #for the purposes of this report - only consider the first session of the baseline scan - might need to modify later if want to count followup
   mri <- subset(mri, mri$redcap_repeat_instrument =="optimum_neuro_mri")
-  mri <- subset(mri, mri$redcap_event_name =="baseline_arm_6"|mri$redcap_event_name =="6_mth_fu_arm_6")
+  # mri <- subset(mri, mri$redcap_event_name =="baseline_arm_6"|mri$redcap_event_name =="6_mth_fu_arm_6")
   
   #merge mri and df dataframes
   df <- merge(df, mri, by=c('record_id', 'redcap_event_name'), all.x=TRUE)

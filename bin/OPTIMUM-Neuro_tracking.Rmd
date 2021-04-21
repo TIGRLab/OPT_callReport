@@ -1,7 +1,11 @@
 ---
-title: "OPTIMUM-Neuro conference call 2021-01-22"
+title: "OPTIMUM-Neuro Recruitment Report"
 output: html_document
 always_allow_html: yes
+
+params:
+  mri_file: '../sources/OPTIMUM_2021-04-15_Neuro.csv'
+  demo_file: '../sources/OPTIMUM_2021-04-15_Demo.csv'
 ---
 
 ```{r setup, include = FALSE, warning = FALSE}
@@ -32,16 +36,13 @@ if (compareVersion( kable_version, '1.1.0') > 0 )
 
 source('functions.R')
 #read in data
-  mri <- read.csv('../sources/OPTIMUM_2021_01_21_Neuro.csv',na.strings=c("","NA")) #contains all but MRI
-  df <- read.csv('../sources/OPTIMUM_2021_01_21_Demo.csv', na.strings=c("","NA")) #contains just MRI
+  mri <- read.csv(params$mri_file ,na.strings=c("","NA")) 
+  df <- read.csv(params$demo_file, na.strings=c("","NA")) 
   targets <- read.csv('../info/OPT_recruitTargets.csv')
   #make sure target data is in proper format
   targets$month <- as.character(targets$month)
   
     sites <- factor(x = c('CU', 'LA', 'UP', 'UT', 'WU'), levels = c('CU', 'LA', 'UP', 'UT', 'WU'))
-  
-
-  
   df <- prepare_init_df(df, mri, sites)
   
 ```
