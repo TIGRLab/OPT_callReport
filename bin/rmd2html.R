@@ -6,4 +6,6 @@ if (length(args)!=2) {
 
 Sys.setenv(RSTUDIO_PANDOC="/Applications/RStudio.app/Contents/MacOS/pandoc")
 Sys.getenv("RSTUDIO_PANDOC")
-rmarkdown::render('OPTIMUM-Neuro_tracking.Rmd', 'html_document', params=list(mri_file=args[1], demo_file=args[2]))
+rmarkdown::render('OPTIMUM-Neuro_tracking.Rmd', 'html_document', 
+			params=list(mri_file=args[1], demo_file=args[2]),
+			output_file='index.html', output_dir='..')
