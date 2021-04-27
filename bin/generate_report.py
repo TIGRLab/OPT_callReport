@@ -4,8 +4,6 @@
 import csv
 import os
 import logging
-import requests
-from subprocess import Popen
 
 import datman.config
 from redcap import Project, RedcapError
@@ -34,26 +32,22 @@ def main():
 
     project = Project(api_url, token)
     
-    print('Exporting reports from REDCap...')
+    logger.info('Exporting reports from REDCap...')
     demo_data = project.export_reports(format='csv', report_id='45026')
     mri_data  = project.export_reports(format='csv', report_id='45089')
     
     mri_filepath = 'OPT_report_mri.csv'
     demo_filepath = 'OPT_report_demo.csv'
     
-    print(f'Writing MRI data to {mri_filepath}...')
+    logger.info(f'Writing MRI data to {mri_filepath}...')
     with open(mri_filepath, 'w', newline='') as csvfile:
         csvfile.write(mri_data)
 
-    print(f'Writing demographics data to {demo_filepath}...')
+    logger.info(f'Writing demographics data to {demo_filepath}...')
     with open(demo_filepath, 'w', newline='') as csvfile:
         csvfile.write(demo_data)
     
-    print('Calling Rscript to knit html page...')
-    Popen(['Rscript', '--vanilla', 'rmd2html.R',
-        mri_filepath, demo_filepath], shell=False)
-    
-    print('Done!')
+    logger.info('Done!')
 
 if __name__=='__main__':
     main()
